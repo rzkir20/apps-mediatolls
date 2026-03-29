@@ -17,15 +17,9 @@ import AnimatedReanimated, {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { STORAGE_KEY_WELCOME_COMPLETED } from "@/lib/config";
+import { socialPalette } from "@/lib/pallate";
 
 void SplashScreen.preventAutoHideAsync();
-
-/** Mirrors global.css `--brand` / `--brand-end` (for LinearGradient & vector icons). */
-const ACCENT = "#ff3d57";
-const ACCENT_END = "#f2556a";
-const ACCENT_GLOW_STRONG = "rgba(255, 61, 87, 0.16)";
-const ACCENT_GLOW_SOFT = "rgba(255, 61, 87, 0.07)";
-const ACCENT_GLOW_FADE = "rgba(255, 61, 87, 0)";
 
 type FeatureRow = {
   title: string;
@@ -141,7 +135,7 @@ function FeatureCard({ item }: { item: FeatureRow }) {
   return (
     <View className="flex-row items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
       <View className="h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand/6">
-        {item.icon({ size: 24, color: ACCENT })}
+        {item.icon({ size: 24, color: socialPalette.accent })}
       </View>
       <View className="min-w-0 flex-1">
         <Text className="font-sans-bold text-base text-white">{item.title}</Text>
@@ -223,7 +217,11 @@ export default function WelcomeOnboarding() {
         className="absolute -right-20 -top-20 z-0 h-64 w-64 overflow-hidden rounded-full opacity-65"
       >
         <LinearGradient
-          colors={[ACCENT_GLOW_STRONG, "rgba(255, 61, 87, 0.05)", ACCENT_GLOW_FADE]}
+          colors={[
+            socialPalette.accentGlowStrong,
+            socialPalette.accentGlowMidStrong,
+            socialPalette.accentGlowFade,
+          ]}
           locations={[0, 0.5, 1]}
           start={{ x: 0.15, y: 0.15 }}
           end={{ x: 1, y: 1 }}
@@ -235,7 +233,11 @@ export default function WelcomeOnboarding() {
         className="absolute -left-32 top-1/2 z-0 h-80 w-80 overflow-hidden rounded-full opacity-[0.65]"
       >
         <LinearGradient
-          colors={[ACCENT_GLOW_SOFT, "rgba(255, 61, 87, 0.03)", ACCENT_GLOW_FADE]}
+          colors={[
+            socialPalette.accentGlowSoft,
+            socialPalette.accentGlowMidSoft,
+            socialPalette.accentGlowFade,
+          ]}
           locations={[0, 0.55, 1]}
           start={{ x: 0, y: 0.4 }}
           end={{ x: 1, y: 1 }}
@@ -262,7 +264,7 @@ export default function WelcomeOnboarding() {
               >
                 <View className="h-12 w-12 overflow-hidden rounded-2xl shadow-lg shadow-brand/12 elevation-6">
                   <LinearGradient
-                    colors={[ACCENT, ACCENT_END]}
+                    colors={[socialPalette.accent, socialPalette.welcomeAccentEnd]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{
@@ -279,7 +281,7 @@ export default function WelcomeOnboarding() {
               </Animated.View>
             ) : (
               <View className="mb-6 h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-                {slide.headerIcon({ size: 24, color: ACCENT })}
+                {slide.headerIcon({ size: 24, color: socialPalette.accent })}
               </View>
             )}
 
@@ -331,7 +333,7 @@ export default function WelcomeOnboarding() {
               className="min-w-0 flex-1 active:scale-[0.96] active:opacity-[0.92]"
             >
               <LinearGradient
-                colors={[ACCENT, ACCENT_END]}
+                colors={[socialPalette.accent, socialPalette.welcomeAccentEnd]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 style={{
@@ -341,7 +343,7 @@ export default function WelcomeOnboarding() {
                   alignItems: "center",
                   justifyContent: "center",
                   width: "100%",
-                  shadowColor: ACCENT,
+                  shadowColor: socialPalette.accent,
                   shadowOffset: { width: 0, height: 6 },
                   shadowOpacity: 0.16,
                   shadowRadius: 10,

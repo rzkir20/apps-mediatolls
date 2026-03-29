@@ -20,15 +20,19 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import "../global.css";
 
+import { socialPalette } from "@/lib/pallate";
+
 const queryClient = new QueryClient();
+
+const socialBg = socialPalette.bg;
 
 export default function RootLayout() {
   const [materialIconsLoaded] = useFonts(MaterialIcons.font);
 
   if (!materialIconsLoaded) {
     return (
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#05060f" }}>
-        <View style={{ flex: 1, backgroundColor: "#05060f" }} />
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: socialBg }}>
+        <View style={{ flex: 1, backgroundColor: socialBg }} />
       </GestureHandlerRootView>
     );
   }
@@ -38,15 +42,15 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <SafeAreaProvider>
           <ThemeProvider value={DefaultTheme}>
-            <SafeAreaView style={{ flex: 1, backgroundColor: "#05060f" }}>
+            <SafeAreaView style={{ flex: 1, backgroundColor: socialBg }}>
               <Stack
                 screenOptions={{
                   headerShown: false,
-                  contentStyle: { backgroundColor: "#05060f" },
+                  contentStyle: { backgroundColor: socialBg },
                 }}
               >
                 <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="welcome" options={{ headerShown: false }} />
+                <Stack.Screen name="welcome/index" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               </Stack>
             </SafeAreaView>

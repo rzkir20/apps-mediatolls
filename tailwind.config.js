@@ -1,16 +1,19 @@
+const path = require('path');
+
 const { hairlineWidth, platformSelect } = require('nativewind/theme');
+
+const jiti = require('jiti')(path.resolve(process.cwd(), 'tailwind.config.js'));
+
+const { socialPalette } = jiti('./lib/pallate.ts');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    // NOTE: Update this to include the paths to all files that contain Nativewind classes.
     content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
     presets: [require("nativewind/preset")],
     theme: {
       extend: {
         fontFamily: {
-          /** Cabinet Grotesk → Space Grotesk (Expo Google Fonts) */
           cabinet: ["SpaceGrotesk_700Bold"],
-          /** Satoshi → Inter */
           sans: ["Inter_500Medium"],
           "sans-bold": ["Inter_700Bold"],
         },
@@ -21,6 +24,17 @@ module.exports = {
           },
           welcome: withOpacity('welcome'),
           'brand-highlight': withOpacity('brand-highlight'),
+          social: {
+            bg: socialPalette.bg,
+            accent: socialPalette.accent,
+            'accent-end': socialPalette.accentEnd,
+            slate: {
+              500: socialPalette.slate500,
+              600: socialPalette.slate600,
+            },
+            'card-from': socialPalette.cardFrom,
+            'accent-faint': socialPalette.accentFaint,
+          },
         },
         borderWidth: {
           hairline: hairlineWidth(),
@@ -28,9 +42,9 @@ module.exports = {
       },
     },
     plugins: [],
-  }
-  
-  function withOpacity(variableName) {
+  };
+
+function withOpacity(variableName) {
     return ({ opacityValue }) => {
       if (opacityValue !== undefined) {
         return platformSelect({

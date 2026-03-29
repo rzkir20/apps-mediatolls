@@ -1,4 +1,5 @@
 import * as Clipboard from "expo-clipboard";
+import * as Linking from "expo-linking";
 
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -10,14 +11,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-const BG = "#05060f";
-const ACCENT = "#ff3d57";
-const ACCENT_END = "#e11d48";
-const SLATE_500 = "#64748b";
-const SLATE_600 = "#475569";
+import { useAppConfig } from "@/lib/config";
+import { socialPalette } from "@/lib/pallate";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { apiUrl } = useAppConfig();
+  const baseUrl = apiUrl ?? "";
   const [url, setUrl] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -27,22 +27,32 @@ export default function HomeScreen() {
   }, []);
 
   const onDownload = useCallback(() => {
-    if (!url.trim() || isDownloading) return;
+    const trimmed = url.trim();
+    if (!trimmed || isDownloading || !baseUrl) return;
+
     setIsDownloading(true);
-    setTimeout(() => setIsDownloading(false), 1800);
-  }, [url, isDownloading]);
+    const downloadUrl = `${baseUrl}/api/tiktok/download?url=${encodeURIComponent(
+      trimmed,
+    )}`;
+
+    Linking.openURL(downloadUrl)
+      .catch(() => {
+        // swallow for now; could show a toast if desired
+      })
+      .finally(() => setIsDownloading(false));
+  }, [url, isDownloading, baseUrl]);
 
   const tabBarOffset = 88 + insets.bottom;
 
   return (
-    <View className="flex-1" style={{ backgroundColor: BG }}>
+    <View className="flex-1 bg-social-bg">
       <View
         style={{ paddingTop: insets.top }}
         className="px-6 pb-4 flex-row items-center justify-between"
       >
         <View className="flex-row items-center gap-2">
           <LinearGradient
-            colors={[ACCENT, ACCENT_END]}
+            colors={[socialPalette.accent, socialPalette.accentEnd]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={{
@@ -51,7 +61,7 @@ export default function HomeScreen() {
               borderRadius: 12,
               alignItems: "center",
               justifyContent: "center",
-              shadowColor: ACCENT,
+              shadowColor: socialPalette.accent,
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.2,
               shadowRadius: 8,
@@ -81,17 +91,14 @@ export default function HomeScreen() {
       >
         <View className="mt-2 px-6 mb-10">
           <View className="flex-row items-center gap-3 mb-3">
-            <View style={{ height: 2, width: 32, backgroundColor: ACCENT }} />
-            <Text
-              className="font-black text-[10px] tracking-[0.2em] uppercase"
-              style={{ color: ACCENT }}
-            >
+            <View className="h-0.5 w-8 bg-social-accent" />
+            <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
               BE DIFFERENT
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-2">
             Online Video{"\n"}
-            <Text style={{ color: ACCENT }}>Downloader</Text>
+            <Text className="text-social-accent">Downloader</Text>
           </Text>
 
           <View className="space-y-4 mt-6">
@@ -99,7 +106,7 @@ export default function HomeScreen() {
               value={url}
               onChangeText={setUrl}
               placeholder="Insert TikTok Video Link Here..."
-              placeholderTextColor={SLATE_600}
+              placeholderTextColor={socialPalette.slate600}
               className="w-full bg-black border border-white/10 rounded-2xl py-5 px-4 text-sm font-medium text-white"
               autoCapitalize="none"
               autoCorrect={false}
@@ -112,7 +119,7 @@ export default function HomeScreen() {
                 <IconSymbol
                   name="doc.on.clipboard"
                   size={20}
-                  color={SLATE_500}
+                  color={socialPalette.slate500}
                 />
                 <Text className="font-bold text-sm tracking-widest text-white">
                   TEMPEL
@@ -125,7 +132,7 @@ export default function HomeScreen() {
                 style={{ opacity: isDownloading || !url.trim() ? 0.55 : 1 }}
               >
                 <LinearGradient
-                  colors={[ACCENT, ACCENT_END]}
+                  colors={[socialPalette.accent, socialPalette.accentEnd]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                   style={{
@@ -134,7 +141,7 @@ export default function HomeScreen() {
                     alignItems: "center",
                     justifyContent: "center",
                     minHeight: 52,
-                    shadowColor: ACCENT,
+                    shadowColor: socialPalette.accent,
                     shadowOffset: { width: 0, height: 4 },
                     shadowOpacity: 0.3,
                     shadowRadius: 8,
@@ -156,17 +163,14 @@ export default function HomeScreen() {
           </View>
 
           <View className="mt-8 flex-row items-center gap-4">
-            <Text
-              className="text-[10px] font-black uppercase tracking-widest"
-              style={{ color: SLATE_500 }}
-            >
+            <Text className="text-[10px] font-black uppercase tracking-widest text-social-slate-500">
               Supported:
             </Text>
             <View className="flex-row gap-4" style={{ opacity: 0.85 }}>
-              <IconSymbol name="monitor" size={20} color={SLATE_500} />
-              <IconSymbol name="smartphone" size={20} color={SLATE_500} />
-              <IconSymbol name="tablet" size={20} color={SLATE_500} />
-              <IconSymbol name="laptop" size={20} color={SLATE_500} />
+              <IconSymbol name="monitor" size={20} color={socialPalette.slate500} />
+              <IconSymbol name="smartphone" size={20} color={socialPalette.slate500} />
+              <IconSymbol name="tablet" size={20} color={socialPalette.slate500} />
+              <IconSymbol name="laptop" size={20} color={socialPalette.slate500} />
             </View>
           </View>
         </View>
@@ -174,23 +178,17 @@ export default function HomeScreen() {
         <View className="px-6 mb-10">
           <View className="flex-row items-center justify-between mb-6">
             <Text className="text-2xl font-extrabold italic tracking-tight uppercase text-white">
-              Recent <Text style={{ color: ACCENT }}>History</Text>
+              Recent <Text className="text-social-accent">History</Text>
             </Text>
             <Pressable>
-              <Text
-                className="text-[10px] font-black uppercase tracking-widest"
-                style={{ color: ACCENT }}
-              >
+              <Text className="text-[10px] font-black uppercase tracking-widest text-social-accent">
                 Clear History
               </Text>
             </Pressable>
           </View>
           <View className="border-2 border-dashed border-white/5 rounded-3xl py-10 items-center justify-center">
-            <View
-              className="w-12 h-12 rounded-full items-center justify-center mb-3"
-              style={{ backgroundColor: `${ACCENT}1A` }}
-            >
-              <IconSymbol name="history" size={28} color={ACCENT} />
+            <View className="w-12 h-12 rounded-full items-center justify-center mb-3 bg-social-accent-faint">
+              <IconSymbol name="history" size={28} color={socialPalette.accent} />
             </View>
             <Text className="text-slate-500 text-xs font-medium text-center px-4">
               Belum ada riwayat. Isi link TikTok lalu download.
@@ -201,7 +199,7 @@ export default function HomeScreen() {
         <View className="px-6 mb-8">
           <View className="p-6 rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
-              colors={["#12131a", BG]}
+              colors={[socialPalette.cardFrom, socialPalette.bg]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={{
@@ -222,10 +220,7 @@ export default function HomeScreen() {
               Explore our premium downloader for faster multi-thread
               downloading.
             </Text>
-            <Pressable
-              className="self-start px-6 py-3 rounded-full active:opacity-90"
-              style={{ backgroundColor: ACCENT }}
-            >
+            <Pressable className="self-start px-6 py-3 rounded-full active:opacity-90 bg-social-accent">
               <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
                 Explore Now
               </Text>
