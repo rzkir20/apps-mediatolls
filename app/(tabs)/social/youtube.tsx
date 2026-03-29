@@ -5,23 +5,23 @@ import { LinearGradient } from "expo-linear-gradient";
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import {
+  Linking,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-  Linking,
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
+import { DialogYoutube } from "@/components/social/youtube/DialogYoutube";
+
 import { socialPalette } from "@/lib/pallate";
 
-import { useTiktokController } from "@/services/tiktok.service";
-
-import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
+import { useYoutubeController } from "@/services/youtube.service";
 
 function historyTypeIconName(
   type: HistoryItem["type"],
@@ -42,24 +42,45 @@ function historyTypeIconName(
   }
 }
 
-export default function HomeScreen() {
+const SUPPORTED_FORMAT_CARDS = [
+  {
+    title: "MP4 / 720p",
+    sub: "Standard HD",
+    icon: "tv" as const,
+    fullWidth: false,
+  },
+  {
+    title: "MP4 / 1080p",
+    sub: "Full High Def",
+    icon: "monitor" as const,
+    fullWidth: false,
+  },
+  {
+    title: "MP3 Audio Only",
+    sub: "High Quality 320kbps Extraction",
+    icon: "music.note" as const,
+    fullWidth: true,
+  },
+];
+
+export default function YoutubeScreen() {
   const insets = useSafeAreaInsets();
 
   const {
     url,
     setUrl,
+    canFetch,
     isFetching,
     metadata,
+    videoInfo,
     errorText,
     history,
     isPreviewOpen,
     previewUrl,
     isSaving,
     saveText,
-    previewWidth,
-    photoPreviewIndex,
-    coverWidth,
-    coverPhotoIndex,
+    selectedFormatIndex,
+    setSelectedFormatIndex,
     isDownloadOpen,
     downloadPercent,
     downloadPillText,
@@ -70,36 +91,34 @@ export default function HomeScreen() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    onClearHistory,
     closePreview,
     closeDownloadModal,
     onPaste,
     onFetchResult,
     onPreview,
-    onPreviewLayout,
-    onCoverLayout,
-    onPhotoPreviewScrollEnd,
-    onCoverPhotoScrollEnd,
-    onClearHistory,
     onDownloadVideoMp4,
     onDownloadAudioMp3,
-    onDownloadPhotos,
     onTogglePauseOrSave,
-  } = useTiktokController();
+  } = useYoutubeController();
 
   const tabBarOffset = 88 + insets.bottom;
-  const isPhotoPost = !!metadata?.images?.length;
+  const audioAvailable = !!videoInfo?.audioUrl;
 
-  const onOpenTikTokApp = async () => {
-    const candidates = ["tiktok://"];
-    for (const url of candidates) {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-        return;
+  const onOpenYoutubeApp = async () => {
+    const candidates = ["youtube://www.youtube.com", "vnd.youtube://"];
+    for (const u of candidates) {
+      try {
+        const supported = await Linking.canOpenURL(u);
+        if (supported) {
+          await Linking.openURL(u);
+          return;
+        }
+      } catch {
+        /* continue */
       }
     }
-
-    await Linking.openURL("https://www.tiktok.com/");
+    await Linking.openURL("https://www.youtube.com/");
   };
 
   return (
@@ -113,7 +132,7 @@ export default function HomeScreen() {
         speedText={downloadSpeedText ?? undefined}
         remainingText={downloadRemainingText ?? undefined}
         downloadedTotalText={
-          downloadTotalText ?? (isSaving ? "Saving video..." : (saveText ?? ""))
+          downloadTotalText ?? (isSaving ? "Saving..." : (saveText ?? ""))
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
@@ -130,20 +149,15 @@ export default function HomeScreen() {
         onRequestClose={closeDownloadModal}
       />
 
-      <DialogTiktok
+      <DialogYoutube
         isOpen={isPreviewOpen}
         onClose={closePreview}
-        metadata={metadata}
         previewUrl={previewUrl}
+        audioAvailable={audioAvailable}
         isSaving={isSaving}
         saveText={saveText}
-        previewWidth={previewWidth}
-        photoPreviewIndex={photoPreviewIndex}
-        onPreviewLayout={onPreviewLayout}
-        onPhotoPreviewScrollEnd={onPhotoPreviewScrollEnd}
         onDownloadVideoMp4={onDownloadVideoMp4}
         onDownloadAudioMp3={onDownloadAudioMp3}
-        onDownloadPhotos={onDownloadPhotos}
       />
 
       <ScrollView
@@ -152,25 +166,25 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View className="mt-6 px-6 mb-10">
+        <View className="mt-2 px-6 mb-10">
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
               BE DIFFERENT
             </Text>
           </View>
-          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-2">
-            Online Video{"\n"}
-            <Text className="text-social-accent">Downloader</Text>
+          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-8">
+            Download YouTube{"\n"}
+            <Text className="text-social-accent">Video</Text>
           </Text>
 
-          <View className="flex flex-col gap-6 mt-6">
+          <View className="flex flex-col gap-4">
             <TextInput
               value={url}
               onChangeText={setUrl}
-              placeholder="Insert TikTok Video Link Here..."
+              placeholder="Insert YouTube Video Link Here..."
               placeholderTextColor={socialPalette.slate600}
-              className="w-full bg-black border border-white/10 rounded-2xl py-5 px-4 text-sm font-medium text-white"
+              className="w-full bg-black border border-white/10 rounded-2xl py-5 px-6 text-sm font-medium text-white"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -178,7 +192,7 @@ export default function HomeScreen() {
             <View className="flex-row gap-3">
               <Pressable
                 onPress={onPaste}
-                className="flex-1 py-4 px-4 rounded-2xl bg-white/5 border border-white/10 flex-row items-center justify-center gap-2 active:opacity-90"
+                className="flex-1 py-4 px-6 rounded-2xl bg-white/5 border border-white/10 flex-row items-center justify-center gap-2 active:opacity-90"
               >
                 <IconSymbol
                   name="doc.on.clipboard"
@@ -191,9 +205,9 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 onPress={onFetchResult}
-                disabled={isFetching || !url.trim()}
+                disabled={isFetching || !canFetch}
                 className="flex-[1.5] rounded-2xl overflow-hidden active:opacity-90"
-                style={{ opacity: isFetching || !url.trim() ? 0.55 : 1 }}
+                style={{ opacity: isFetching || !canFetch ? 0.55 : 1 }}
               >
                 <LinearGradient
                   colors={[socialPalette.accent, socialPalette.accentEnd]}
@@ -218,49 +232,70 @@ export default function HomeScreen() {
                     </Text>
                   ) : (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Get Video
+                      Download
                     </Text>
                   )}
                 </LinearGradient>
               </Pressable>
             </View>
 
-            <View className="flex-row items-center gap-3">
-              <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500">
-                Supported:
+            <View className="mt-6">
+              <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-4">
+                Supported Formats:
               </Text>
-              <View className="flex-row flex-wrap gap-2">
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp4"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP4
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.image"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    PNG / JPG
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp3"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP3
-                  </Text>
-                </View>
+              <View className="flex-row gap-3 mb-3">
+                {SUPPORTED_FORMAT_CARDS.filter((c) => !c.fullWidth).map(
+                  (card) => (
+                    <View
+                      key={card.title}
+                      className="flex-1 flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
+                    >
+                      <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
+                        <IconSymbol
+                          name={card.icon}
+                          size={20}
+                          color={socialPalette.accent}
+                        />
+                      </View>
+                      <View className="flex-1 min-w-0">
+                        <Text
+                          className="text-xs font-bold text-white"
+                          numberOfLines={1}
+                        >
+                          {card.title}
+                        </Text>
+                        <Text className="text-[10px] text-social-slate-500 mt-0.5">
+                          {card.sub}
+                        </Text>
+                      </View>
+                    </View>
+                  ),
+                )}
               </View>
+              {SUPPORTED_FORMAT_CARDS.filter((c) => c.fullWidth).map(
+                (card) => (
+                  <View
+                    key={card.title}
+                    className="flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
+                  >
+                    <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
+                      <IconSymbol
+                        name={card.icon}
+                        size={20}
+                        color={socialPalette.accent}
+                      />
+                    </View>
+                    <View className="flex-1 min-w-0">
+                      <Text className="text-xs font-bold text-white">
+                        {card.title}
+                      </Text>
+                      <Text className="text-[10px] text-social-slate-500 mt-0.5">
+                        {card.sub}
+                      </Text>
+                    </View>
+                  </View>
+                ),
+              )}
             </View>
 
             {!!errorText && (
@@ -282,69 +317,21 @@ export default function HomeScreen() {
             {!!metadata && (
               <View className="p-4 rounded-3xl border border-white/10 bg-white/5">
                 <View className="flex-col gap-4">
-                  <View
-                    className="w-full aspect-square rounded-2xl overflow-hidden bg-black/40 border border-white/10"
-                    onLayout={onCoverLayout}
-                  >
-                    {isPhotoPost && (metadata.images ?? []).length ? (
-                      <>
-                        <ScrollView
-                          horizontal
-                          pagingEnabled
-                          showsHorizontalScrollIndicator={false}
-                          className="flex-1"
-                          onMomentumScrollEnd={onCoverPhotoScrollEnd}
-                        >
-                          {(metadata.images ?? []).map((uri, idx) => (
-                            <View
-                              key={`${uri}-${idx}`}
-                              style={{
-                                width: coverWidth || undefined,
-                                height: "100%",
-                              }}
-                            >
-                              <Image
-                                source={{ uri }}
-                                style={{ width: "100%", height: "100%" }}
-                                contentFit="cover"
-                              />
-                            </View>
-                          ))}
-                        </ScrollView>
-
-                        <View className="absolute bottom-3 left-0 right-0 items-center">
-                          <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-black/40 border border-white/10">
-                            {(metadata.images ?? []).map((_, idx) => {
-                              const active = idx === coverPhotoIndex;
-                              return (
-                                <View
-                                  key={`cover-dot-${idx}`}
-                                  className="rounded-full"
-                                  style={{
-                                    width: active ? 16 : 6,
-                                    height: 6,
-                                    backgroundColor: active
-                                      ? socialPalette.accent
-                                      : "rgba(255,255,255,0.35)",
-                                    opacity: active ? 1 : 0.9,
-                                  }}
-                                />
-                              );
-                            })}
-                          </View>
-                        </View>
-                      </>
-                    ) : metadata.cover ? (
+                  <View className="w-full rounded-2xl overflow-hidden bg-black/40 border border-white/10">
+                    {metadata.thumbnail ? (
                       <Image
-                        source={{ uri: metadata.cover }}
-                        style={{ width: "100%", aspectRatio: 1 }}
+                        source={{ uri: metadata.thumbnail }}
+                        style={{ width: "100%", aspectRatio: 16 / 9 }}
                         contentFit="cover"
                       />
                     ) : (
-                      <View className="flex-1 items-center justify-center">
+                      <View
+                        className="items-center justify-center bg-black/50"
+                        style={{ aspectRatio: 16 / 9 }}
+                      >
                         <IconSymbol
-                          name="photo"
-                          size={24}
+                          name="brand.youtube"
+                          size={40}
                           color={socialPalette.slate500}
                         />
                       </View>
@@ -356,18 +343,68 @@ export default function HomeScreen() {
                       className="text-white font-extrabold text-sm"
                       numberOfLines={2}
                     >
-                      {metadata.text?.trim() || "TikTok Video"}
+                      {metadata.title?.trim() || "YouTube"}
                     </Text>
-                    <Text
-                      className="text-social-slate-500 text-xs mt-1 font-semibold"
-                      numberOfLines={1}
-                    >
-                      {metadata.author ? `@${metadata.author}` : "TikTok"}
-                    </Text>
-                    <View className="flex-row gap-2 mt-3">
+                    {!!metadata.duration && (
+                      <Text className="text-social-slate-500 text-xs mt-1 font-semibold">
+                        {metadata.duration}
+                      </Text>
+                    )}
+
+                    {!!videoInfo?.formatOptions?.length ? (
+                      <View className="mt-3">
+                        <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-2">
+                          Quality
+                        </Text>
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{
+                            flexDirection: "row",
+                            gap: 8,
+                          }}
+                        >
+                          {videoInfo.formatOptions.map((opt, idx) => {
+                            const active = idx === selectedFormatIndex;
+                            return (
+                              <Pressable
+                                key={`${opt.label}-${idx}`}
+                                onPress={() => setSelectedFormatIndex(idx)}
+                                className="px-3 py-2 rounded-full border"
+                                style={
+                                  active
+                                    ? {
+                                        backgroundColor: socialPalette.accent,
+                                        borderColor: socialPalette.accent,
+                                      }
+                                    : {
+                                        borderColor: "rgba(255,255,255,0.15)",
+                                        backgroundColor: "rgba(255,255,255,0.05)",
+                                      }
+                                }
+                              >
+                                <Text
+                                  className={`text-[10px] font-black tracking-widest uppercase ${
+                                    active ? "text-white" : "text-slate-400"
+                                  }`}
+                                >
+                                  {opt.label}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </ScrollView>
+                      </View>
+                    ) : null}
+
+                    <View className="flex-row flex-wrap gap-2 mt-3">
                       <Pressable
                         onPress={onPreview}
+                        disabled={!videoInfo?.previewVideoUrl}
                         className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
+                        style={{
+                          opacity: videoInfo?.previewVideoUrl ? 1 : 0.45,
+                        }}
                       >
                         <IconSymbol
                           name="play.circle"
@@ -378,42 +415,22 @@ export default function HomeScreen() {
                           Preview
                         </Text>
                       </Pressable>
-                      {(!!metadata?.videoUrlNoWaterMark ||
-                        !!metadata?.videoUrl ||
-                        !!previewUrl) &&
-                      !isPhotoPost ? (
-                        <Pressable
-                          onPress={onDownloadVideoMp4}
-                          disabled={isSaving}
-                          className="px-4 py-2 rounded-full bg-social-accent active:opacity-90 flex-row items-center gap-2"
-                          style={{ opacity: isSaving ? 0.6 : 1 }}
-                        >
-                          <IconSymbol
-                            name="arrow.down"
-                            size={18}
-                            color="#fff"
-                          />
-                          <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save MP4"}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-
-                      {!!metadata?.images?.length ? (
-                        <Pressable
-                          onPress={onDownloadPhotos}
-                          disabled={isSaving}
-                          className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
-                          style={{ opacity: isSaving ? 0.6 : 1 }}
-                        >
-                          <IconSymbol name="photo" size={18} color="#fff" />
-                          <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save Photos"}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-
-                      {!!metadata?.audioUrl ? (
+                      <Pressable
+                        onPress={onDownloadVideoMp4}
+                        disabled={isSaving || !videoInfo}
+                        className="px-4 py-2 rounded-full bg-social-accent active:opacity-90 flex-row items-center gap-2"
+                        style={{ opacity: isSaving || !videoInfo ? 0.6 : 1 }}
+                      >
+                        <IconSymbol
+                          name="arrow.down"
+                          size={18}
+                          color="#fff"
+                        />
+                        <Text className="text-white text-[10px] font-black tracking-widest uppercase">
+                          {isSaving ? "Saving..." : "Save MP4"}
+                        </Text>
+                      </Pressable>
+                      {audioAvailable ? (
                         <Pressable
                           onPress={onDownloadAudioMp3}
                           disabled={isSaving}
@@ -539,14 +556,14 @@ export default function HomeScreen() {
                   color={socialPalette.accent}
                 />
               </View>
-              <Text className="text-slate-500 text-xs font-medium text-center px-4">
-                Belum ada riwayat. Isi link TikTok lalu download.
+              <Text className="text-slate-500 text-xs font-medium text-center px-10 leading-relaxed">
+                Belum ada riwayat. Tempel link YouTube lalu klik download.
               </Text>
             </View>
           )}
         </View>
 
-        <View className="px-6">
+        <View className="px-6 mb-24">
           <View className="rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
@@ -583,7 +600,7 @@ export default function HomeScreen() {
               </Text>
 
               <Pressable
-                onPress={onOpenTikTokApp}
+                onPress={onOpenYoutubeApp}
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">

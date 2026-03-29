@@ -17,7 +17,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="social/index"
+        name="social"
         options={{
           title: "Social",
           tabBarIcon: ({ color }) => (

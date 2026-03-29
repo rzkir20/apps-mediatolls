@@ -5,23 +5,26 @@ import { LinearGradient } from "expo-linear-gradient";
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import {
+  LayoutChangeEvent,
+  Linking,
   Pressable,
   ScrollView,
   Text,
   TextInput,
   View,
-  Linking,
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useState } from "react";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
+
+import { DialogInstagram } from "@/components/social/instagram/DialogInstagram";
 
 import { socialPalette } from "@/lib/pallate";
 
-import { useTiktokController } from "@/services/tiktok.service";
-
-import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
+import { useInstagramController } from "@/services/instagram.service";
 
 function historyTypeIconName(
   type: HistoryItem["type"],
@@ -42,12 +45,22 @@ function historyTypeIconName(
   }
 }
 
-export default function HomeScreen() {
+const FORMAT_BADGES = [
+  { label: "JPG", icon: "format.jpg" as const },
+  { label: "PNG", icon: "format.png" as const },
+  { label: "MP4", icon: "format.mp4" as const },
+  { label: "GIF", icon: "format.gif" as const },
+] as const;
+
+export default function InstagramScreen() {
   const insets = useSafeAreaInsets();
+  const [coverWidth, setCoverWidth] = useState(0);
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState(0);
 
   const {
     url,
     setUrl,
+    canFetch,
     isFetching,
     metadata,
     errorText,
@@ -56,10 +69,6 @@ export default function HomeScreen() {
     previewUrl,
     isSaving,
     saveText,
-    previewWidth,
-    photoPreviewIndex,
-    coverWidth,
-    coverPhotoIndex,
     isDownloadOpen,
     downloadPercent,
     downloadPillText,
@@ -75,31 +84,39 @@ export default function HomeScreen() {
     onPaste,
     onFetchResult,
     onPreview,
-    onPreviewLayout,
-    onCoverLayout,
-    onPhotoPreviewScrollEnd,
-    onCoverPhotoScrollEnd,
     onClearHistory,
     onDownloadVideoMp4,
-    onDownloadAudioMp3,
     onDownloadPhotos,
     onTogglePauseOrSave,
-  } = useTiktokController();
+  } = useInstagramController();
 
   const tabBarOffset = 88 + insets.bottom;
   const isPhotoPost = !!metadata?.images?.length;
 
-  const onOpenTikTokApp = async () => {
-    const candidates = ["tiktok://"];
-    for (const url of candidates) {
-      const supported = await Linking.canOpenURL(url);
+  const onCoverLayout = (e: LayoutChangeEvent) => {
+    const w = e.nativeEvent.layout.width;
+    if (w > 0) setCoverWidth(w);
+  };
+
+  const onCoverPhotoScrollEnd = (e: {
+    nativeEvent: { contentOffset: { x: number } };
+  }) => {
+    const w = coverWidth || 0;
+    if (!w) return;
+    const idx = Math.round(e.nativeEvent.contentOffset.x / w);
+    setCoverPhotoIndex(Math.max(0, idx));
+  };
+
+  const onOpenInstagramApp = async () => {
+    const candidates = ["instagram://", "instagram://app"];
+    for (const u of candidates) {
+      const supported = await Linking.canOpenURL(u);
       if (supported) {
-        await Linking.openURL(url);
+        await Linking.openURL(u);
         return;
       }
     }
-
-    await Linking.openURL("https://www.tiktok.com/");
+    await Linking.openURL("https://www.instagram.com/");
   };
 
   return (
@@ -113,7 +130,7 @@ export default function HomeScreen() {
         speedText={downloadSpeedText ?? undefined}
         remainingText={downloadRemainingText ?? undefined}
         downloadedTotalText={
-          downloadTotalText ?? (isSaving ? "Saving video..." : (saveText ?? ""))
+          downloadTotalText ?? (isSaving ? "Saving..." : (saveText ?? ""))
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
@@ -130,19 +147,14 @@ export default function HomeScreen() {
         onRequestClose={closeDownloadModal}
       />
 
-      <DialogTiktok
+      <DialogInstagram
         isOpen={isPreviewOpen}
         onClose={closePreview}
         metadata={metadata}
         previewUrl={previewUrl}
         isSaving={isSaving}
         saveText={saveText}
-        previewWidth={previewWidth}
-        photoPreviewIndex={photoPreviewIndex}
-        onPreviewLayout={onPreviewLayout}
-        onPhotoPreviewScrollEnd={onPhotoPreviewScrollEnd}
         onDownloadVideoMp4={onDownloadVideoMp4}
-        onDownloadAudioMp3={onDownloadAudioMp3}
         onDownloadPhotos={onDownloadPhotos}
       />
 
@@ -159,18 +171,18 @@ export default function HomeScreen() {
               BE DIFFERENT
             </Text>
           </View>
-          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-2">
-            Online Video{"\n"}
-            <Text className="text-social-accent">Downloader</Text>
+          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-8">
+            Download Instagram{"\n"}
+            <Text className="text-social-accent">Photo/Video</Text>
           </Text>
 
-          <View className="flex flex-col gap-6 mt-6">
+          <View className="flex flex-col gap-4">
             <TextInput
               value={url}
               onChangeText={setUrl}
-              placeholder="Insert TikTok Video Link Here..."
+              placeholder="Insert Instagram Link Here..."
               placeholderTextColor={socialPalette.slate600}
-              className="w-full bg-black border border-white/10 rounded-2xl py-5 px-4 text-sm font-medium text-white"
+              className="w-full bg-black border border-white/10 rounded-2xl py-5 px-6 text-sm font-medium text-white"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -178,7 +190,7 @@ export default function HomeScreen() {
             <View className="flex-row gap-3">
               <Pressable
                 onPress={onPaste}
-                className="flex-1 py-4 px-4 rounded-2xl bg-white/5 border border-white/10 flex-row items-center justify-center gap-2 active:opacity-90"
+                className="flex-1 py-4 px-6 rounded-2xl bg-white/5 border border-white/10 flex-row items-center justify-center gap-2 active:opacity-90"
               >
                 <IconSymbol
                   name="doc.on.clipboard"
@@ -191,9 +203,9 @@ export default function HomeScreen() {
               </Pressable>
               <Pressable
                 onPress={onFetchResult}
-                disabled={isFetching || !url.trim()}
+                disabled={isFetching || !canFetch}
                 className="flex-[1.5] rounded-2xl overflow-hidden active:opacity-90"
-                style={{ opacity: isFetching || !url.trim() ? 0.55 : 1 }}
+                style={{ opacity: isFetching || !canFetch ? 0.55 : 1 }}
               >
                 <LinearGradient
                   colors={[socialPalette.accent, socialPalette.accentEnd]}
@@ -218,48 +230,33 @@ export default function HomeScreen() {
                     </Text>
                   ) : (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Get Video
+                      Download
                     </Text>
                   )}
                 </LinearGradient>
               </Pressable>
             </View>
 
-            <View className="flex-row items-center gap-3">
+            <View className="mt-4 flex-row items-center gap-4">
               <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500">
-                Supported:
+                Formats:
               </Text>
-              <View className="flex-row flex-wrap gap-2">
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp4"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP4
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.image"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    PNG / JPG
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp3"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP3
-                  </Text>
-                </View>
+              <View className="flex-row flex-wrap gap-3">
+                {FORMAT_BADGES.map(({ label, icon }) => (
+                  <View
+                    key={label}
+                    className="flex-row items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-lg"
+                  >
+                    <IconSymbol
+                      name={icon}
+                      size={14}
+                      color="rgba(255,255,255,0.8)"
+                    />
+                    <Text className="text-[10px] font-bold text-slate-400">
+                      {label}
+                    </Text>
+                  </View>
+                ))}
               </View>
             </View>
 
@@ -356,15 +353,15 @@ export default function HomeScreen() {
                       className="text-white font-extrabold text-sm"
                       numberOfLines={2}
                     >
-                      {metadata.text?.trim() || "TikTok Video"}
+                      {metadata.text?.trim() || "Instagram"}
                     </Text>
                     <Text
                       className="text-social-slate-500 text-xs mt-1 font-semibold"
                       numberOfLines={1}
                     >
-                      {metadata.author ? `@${metadata.author}` : "TikTok"}
+                      {metadata.author ? `@${metadata.author}` : "Instagram"}
                     </Text>
-                    <View className="flex-row gap-2 mt-3">
+                    <View className="flex-row flex-wrap gap-2 mt-3">
                       <Pressable
                         onPress={onPreview}
                         className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
@@ -378,9 +375,7 @@ export default function HomeScreen() {
                           Preview
                         </Text>
                       </Pressable>
-                      {(!!metadata?.videoUrlNoWaterMark ||
-                        !!metadata?.videoUrl ||
-                        !!previewUrl) &&
+                      {(!!metadata?.videoUrl || !!previewUrl) &&
                       !isPhotoPost ? (
                         <Pressable
                           onPress={onDownloadVideoMp4}
@@ -409,24 +404,6 @@ export default function HomeScreen() {
                           <IconSymbol name="photo" size={18} color="#fff" />
                           <Text className="text-white text-[10px] font-black tracking-widest uppercase">
                             {isSaving ? "Saving..." : "Save Photos"}
-                          </Text>
-                        </Pressable>
-                      ) : null}
-
-                      {!!metadata?.audioUrl ? (
-                        <Pressable
-                          onPress={onDownloadAudioMp3}
-                          disabled={isSaving}
-                          className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
-                          style={{ opacity: isSaving ? 0.6 : 1 }}
-                        >
-                          <IconSymbol
-                            name="music.note"
-                            size={18}
-                            color="#fff"
-                          />
-                          <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save MP3"}
                           </Text>
                         </Pressable>
                       ) : null}
@@ -497,11 +474,7 @@ export default function HomeScreen() {
                       )}
                       {!!item.cover ? (
                         <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                          <IconSymbol
-                            name={typeIcon}
-                            size={12}
-                            color="#fff"
-                          />
+                          <IconSymbol name={typeIcon} size={12} color="#fff" />
                         </View>
                       ) : null}
                     </View>
@@ -539,14 +512,14 @@ export default function HomeScreen() {
                   color={socialPalette.accent}
                 />
               </View>
-              <Text className="text-slate-500 text-xs font-medium text-center px-4">
-                Belum ada riwayat. Isi link TikTok lalu download.
+              <Text className="text-slate-500 text-xs font-medium text-center px-10">
+                Belum ada riwayat. Isi link Instagram lalu download.
               </Text>
             </View>
           )}
         </View>
 
-        <View className="px-6">
+        <View className="px-6 mb-24">
           <View className="rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
@@ -583,7 +556,7 @@ export default function HomeScreen() {
               </Text>
 
               <Pressable
-                onPress={onOpenTikTokApp}
+                onPress={onOpenInstagramApp}
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">

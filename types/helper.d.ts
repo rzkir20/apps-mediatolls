@@ -59,6 +59,7 @@ type PermissionSnapshot = {
   microphone: boolean;
 };
 
+//======================= Tiktok Types =======================//
 type TiktokUiState = {
   url: string;
   isPreviewOpen: boolean;
@@ -82,6 +83,60 @@ type TiktokUiState = {
 
   isDownloadPaused: boolean;
   isDownloadReadyToSave: boolean;
+};
+
+//======================= Tiktok Dialog Types =======================//
+type DialogTiktokProps = {
+  isOpen: boolean;
+  onClose: () => void;
+
+  metadata: TiktokMetadataResponse | null;
+  previewUrl: string | null;
+  isSaving: boolean;
+  saveText: string | null;
+
+  previewWidth: number;
+  photoPreviewIndex: number;
+  onPreviewLayout: (e: any) => void;
+  onPhotoPreviewScrollEnd: (e: any) => void;
+
+  onDownloadVideoMp4: () => void;
+  onDownloadAudioMp3: () => void;
+  onDownloadPhotos: () => void;
+};
+
+//======================= Instagram Dialog Types =======================//
+type DialogInstagramProps = {
+  isOpen: boolean;
+  onClose: () => void;
+
+  metadata: InstagramMetadataResponse | null;
+  previewUrl: string | null;
+  isSaving: boolean;
+  saveText: string | null;
+
+  onDownloadVideoMp4: () => void;
+  onDownloadPhotos: () => void;
+};
+
+//======================= Youtube Dialog Types =======================//
+type DialogYoutubeProps = {
+  isOpen: boolean;
+  onClose: () => void;
+
+  previewUrl: string | null;
+  audioAvailable: boolean;
+  isSaving: boolean;
+  saveText: string | null;
+
+  onDownloadVideoMp4: () => void;
+  onDownloadAudioMp3: () => void;
+};
+
+//======================= Social Header Types =======================//
+type SocialHeaderProps = {
+  title?: string;
+  onPressProfile?: () => void;
 };
 
 type ErrorShape = { message?: string; error?: string };

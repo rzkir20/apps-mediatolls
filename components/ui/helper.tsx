@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import { useVideoPlayer, VideoView } from "expo-video";
 
@@ -144,10 +144,30 @@ export function PermissionCard({
   );
 }
 
-export function PreviewVideo({ uri, isVisible }: { uri: string; isVisible: boolean }) {
-  const player = useVideoPlayer({ uri }, (p: any) => {
+export function PreviewVideo({
+  uri,
+  isVisible,
+}: {
+  uri: string;
+  isVisible: boolean;
+}) {
+  const isVisibleRef = useRef(isVisible);
+  isVisibleRef.current = isVisible;
+
+  const player = useVideoPlayer(null, (p: any) => {
     p.loop = true;
   });
+
+  useEffect(() => {
+    if (!uri) return;
+    let cancelled = false;
+    void player.replaceAsync({ uri, contentType: "auto" }).then(() => {
+      if (!cancelled && isVisibleRef.current) player.play();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [uri, player]);
 
   useEffect(() => {
     if (isVisible) player.play();
@@ -155,11 +175,55 @@ export function PreviewVideo({ uri, isVisible }: { uri: string; isVisible: boole
   }, [isVisible, player]);
 
   return (
-    <VideoView
-      player={player}
-      style={{ width: "100%", height: "100%" }}
-      contentFit="contain"
-      nativeControls
-    />
+    <View style={{ width: "100%", flex: 1, minHeight: 200 }}>
+      <VideoView
+        player={player}
+        style={{ width: "100%", flex: 1 }}
+        contentFit="contain"
+        nativeControls
+      />
+    </View>
   );
+}
+
+//================================ Social Platform Tabs =================================//
+export const PLATFORM_TABS = [
+  {
+    id: "tiktok" as const,
+    label: "TIKTOK",
+    path: "/(tabs)/social" as const,
+    icon: "brand.tiktok" as const,
+  },
+  {
+    id: "instagram" as const,
+    label: "INSTAGRAM",
+    path: "/(tabs)/social/instagram" as const,
+    icon: "brand.instagram" as const,
+  },
+  {
+    id: "facebook" as const,
+    label: "FACEBOOK",
+    path: "/(tabs)/social/facebook" as const,
+    icon: "brand.facebook" as const,
+  },
+  {
+    id: "youtube" as const,
+    label: "YOUTUBE",
+    path: "/(tabs)/social/youtube" as const,
+    icon: "brand.youtube" as const,
+  },
+];
+
+export function isPlatformActive(
+  pathname: string,
+  id: (typeof PLATFORM_TABS)[number]["id"],
+) {
+  const onInstagram = pathname.includes("/instagram");
+  const onFacebook = pathname.includes("/facebook");
+  const onYoutube = pathname.includes("/youtube");
+  if (id === "instagram") return onInstagram;
+  if (id === "facebook") return onFacebook;
+  if (id === "youtube") return onYoutube;
+  if (id === "tiktok") return !onInstagram && !onFacebook && !onYoutube;
+  return false;
 }
