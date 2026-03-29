@@ -4,19 +4,11 @@ import * as Haptics from "expo-haptics";
 
 import React from "react";
 
-import {
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, Text, TouchableOpacity, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const BG = "#05060f";
-const ACCENT = "#ff3d57";
-const MUTED = "#64748b";
+import { socialPalette } from "@/lib/pallate";
 
 export function NavigationTabs({
   state,
@@ -25,7 +17,10 @@ export function NavigationTabs({
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
 
-  const handlePress = (route: { key: string; name: string }, isFocused: boolean) => {
+  const handlePress = (
+    route: { key: string; name: string },
+    isFocused: boolean,
+  ) => {
     const event = navigation.emit({
       type: "tabPress",
       target: route.key,
@@ -42,9 +37,13 @@ export function NavigationTabs({
   };
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]} pointerEvents="box-none">
-      <View style={styles.content} className="border-t border-white/5">
-        <View className="flex-row items-center justify-between px-4 pt-2 pb-1">
+    <View
+      className="absolute bottom-0 left-0 right-0 overflow-hidden bg-social-bg"
+      style={{ paddingBottom: Math.max(insets.bottom, 8) }}
+      pointerEvents="box-none"
+    >
+      <View className="bg-social-bg border-t border-white/5">
+        <View className="flex-row items-center justify-between pt-2 pb-1">
           {state.routes.map((route, index) => {
             const { options } = descriptors[route.key];
             const label =
@@ -55,7 +54,9 @@ export function NavigationTabs({
                   : route.name;
 
             const isFocused = state.index === index;
-            const color = isFocused ? ACCENT : MUTED;
+            const iconColor = isFocused
+              ? socialPalette.accent
+              : socialPalette.slate500;
 
             return (
               <TouchableOpacity
@@ -68,14 +69,16 @@ export function NavigationTabs({
                   <View className="items-center justify-center">
                     {options.tabBarIcon({
                       focused: isFocused,
-                      color,
+                      color: iconColor,
                       size: 24,
                     })}
                   </View>
                 )}
                 <Text
-                  className="text-[10px] font-bold uppercase tracking-wider"
-                  style={{ color }}
+                  className={[
+                    "text-[10px] font-bold uppercase tracking-wider",
+                    isFocused ? "text-social-accent" : "text-social-slate-500",
+                  ].join(" ")}
                 >
                   {label}
                 </Text>
@@ -87,17 +90,3 @@ export function NavigationTabs({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    overflow: "hidden",
-    backgroundColor: BG,
-  },
-  content: {
-    backgroundColor: BG,
-  },
-});

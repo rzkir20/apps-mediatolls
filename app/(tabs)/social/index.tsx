@@ -1,55 +1,127 @@
-import * as Clipboard from "expo-clipboard";
-import * as Linking from "expo-linking";
+import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
 
-import React, { useCallback, useState } from "react";
+import { PreviewVideo } from "@/components/ui/helper";
 
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Dialog } from "@/components/ui/dialog";
+
+import { DownloadProgressModal } from "@/components/ui/download-modal";
+
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-import { useAppConfig } from "@/lib/config";
 import { socialPalette } from "@/lib/pallate";
+
+import { useTiktokController } from "@/services/tiktok.service";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const { apiUrl } = useAppConfig();
-  const baseUrl = apiUrl ?? "";
-  const [url, setUrl] = useState("");
-  const [isDownloading, setIsDownloading] = useState(false);
 
-  const onPaste = useCallback(async () => {
-    const text = await Clipboard.getStringAsync();
-    if (text) setUrl(text.trim());
-  }, []);
-
-  const onDownload = useCallback(() => {
-    const trimmed = url.trim();
-    if (!trimmed || isDownloading || !baseUrl) return;
-
-    setIsDownloading(true);
-    const downloadUrl = `${baseUrl}/api/tiktok/download?url=${encodeURIComponent(
-      trimmed,
-    )}`;
-
-    Linking.openURL(downloadUrl)
-      .catch(() => {
-        // swallow for now; could show a toast if desired
-      })
-      .finally(() => setIsDownloading(false));
-  }, [url, isDownloading, baseUrl]);
+  const {
+    url,
+    setUrl,
+    isFetching,
+    metadata,
+    errorText,
+    isPreviewOpen,
+    previewUrl,
+    isSaving,
+    saveText,
+    isDownloadOpen,
+    downloadPercent,
+    downloadPillText,
+    downloadSubText,
+    downloadFileName,
+    downloadSpeedText,
+    downloadRemainingText,
+    downloadTotalText,
+    closePreview,
+    closeDownloadModal,
+    onPaste,
+    onFetchResult,
+    onPreview,
+    onDownloadMp4,
+  } = useTiktokController();
 
   const tabBarOffset = 88 + insets.bottom;
 
   return (
     <View className="flex-1 bg-social-bg">
-      <View
-        style={{ paddingTop: insets.top }}
-        className="px-6 pb-4 flex-row items-center justify-between"
+      <DownloadProgressModal
+        visible={isDownloadOpen}
+        fileName={downloadFileName}
+        progressPercent={downloadPercent}
+        statusPillText={downloadPillText ?? undefined}
+        statusSubText={downloadSubText ?? undefined}
+        speedText={downloadSpeedText ?? undefined}
+        remainingText={downloadRemainingText ?? undefined}
+        downloadedTotalText={
+          downloadTotalText ?? (isSaving ? "Saving video..." : saveText ?? "")
+        }
+        isSaving={isSaving}
+        cancelLabel="CLOSE"
+        onCancel={closeDownloadModal}
+        onRequestClose={closeDownloadModal}
+      />
+
+      <Dialog
+        visible={isPreviewOpen}
+        onRequestClose={closePreview}
+        title="Preview"
+        footer={
+          <View className="px-4 py-4">
+            <Pressable
+              onPress={onDownloadMp4}
+              disabled={isSaving}
+              className="w-full rounded-2xl overflow-hidden active:opacity-90"
+              style={{ opacity: isSaving ? 0.6 : 1 }}
+            >
+              <LinearGradient
+                colors={[socialPalette.accent, socialPalette.accentEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  paddingVertical: 14,
+                  paddingHorizontal: 14,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minHeight: 50,
+                }}
+              >
+                <Text className="font-black text-xs tracking-widest text-white uppercase">
+                  {isSaving ? "Saving..." : "Save to Gallery"}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+            {!!saveText && (
+              <Text className="text-social-slate-500 text-xs mt-3 font-semibold">
+                {saveText}
+              </Text>
+            )}
+          </View>
+        }
       >
+        {!!previewUrl ? (
+          <PreviewVideo uri={previewUrl} isVisible={isPreviewOpen} />
+        ) : (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator color="#fff" />
+          </View>
+        )}
+      </Dialog>
+
+      <View className="px-4 pt-4 pb-4 flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           <LinearGradient
             colors={[socialPalette.accent, socialPalette.accentEnd]}
@@ -70,6 +142,7 @@ export default function HomeScreen() {
           >
             <IconSymbol name="play.fill" size={20} color="#fff" />
           </LinearGradient>
+
           <Text className="text-xl font-extrabold tracking-tight text-white">
             MEDIA TOOLS
           </Text>
@@ -101,7 +174,7 @@ export default function HomeScreen() {
             <Text className="text-social-accent">Downloader</Text>
           </Text>
 
-          <View className="space-y-4 mt-6">
+          <View className="flex flex-col gap-6 mt-6">
             <TextInput
               value={url}
               onChangeText={setUrl}
@@ -111,6 +184,7 @@ export default function HomeScreen() {
               autoCapitalize="none"
               autoCorrect={false}
             />
+
             <View className="flex-row gap-3">
               <Pressable
                 onPress={onPaste}
@@ -126,10 +200,10 @@ export default function HomeScreen() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={onDownload}
-                disabled={isDownloading || !url.trim()}
+                onPress={onFetchResult}
+                disabled={isFetching || !url.trim()}
                 className="flex-[1.5] rounded-2xl overflow-hidden active:opacity-90"
-                style={{ opacity: isDownloading || !url.trim() ? 0.55 : 1 }}
+                style={{ opacity: isFetching || !url.trim() ? 0.55 : 1 }}
               >
                 <LinearGradient
                   colors={[socialPalette.accent, socialPalette.accentEnd]}
@@ -148,30 +222,99 @@ export default function HomeScreen() {
                     elevation: 4,
                   }}
                 >
-                  {isDownloading ? (
+                  {isFetching ? (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
                       Processing...
                     </Text>
                   ) : (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Download
+                      Get Video
                     </Text>
                   )}
                 </LinearGradient>
               </Pressable>
             </View>
-          </View>
 
-          <View className="mt-8 flex-row items-center gap-4">
-            <Text className="text-[10px] font-black uppercase tracking-widest text-social-slate-500">
-              Supported:
-            </Text>
-            <View className="flex-row gap-4" style={{ opacity: 0.85 }}>
-              <IconSymbol name="monitor" size={20} color={socialPalette.slate500} />
-              <IconSymbol name="smartphone" size={20} color={socialPalette.slate500} />
-              <IconSymbol name="tablet" size={20} color={socialPalette.slate500} />
-              <IconSymbol name="laptop" size={20} color={socialPalette.slate500} />
-            </View>
+            {!!errorText && (
+              <View className="mt-3 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20">
+                <Text className="text-xs font-semibold text-red-200">
+                  {errorText}
+                </Text>
+              </View>
+            )}
+
+            {!!saveText && !isPreviewOpen && (
+              <View className="mt-3 px-4 py-3 rounded-2xl bg-white/5 border border-white/10">
+                <Text className="text-xs font-semibold text-social-slate-500">
+                  {saveText}
+                </Text>
+              </View>
+            )}
+
+            {!!metadata && (
+              <View className="p-4 rounded-3xl border border-white/10 bg-white/5">
+                <View className="flex-col gap-4">
+                  <View className="w-full aspect-square rounded-2xl overflow-hidden bg-black/40 border border-white/10">
+                    {metadata.cover ? (
+                      <Image
+                        source={{ uri: metadata.cover }}
+                        style={{ width: "100%", aspectRatio: 1 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View className="flex-1 items-center justify-center">
+                        <IconSymbol
+                          name="photo"
+                          size={24}
+                          color={socialPalette.slate500}
+                        />
+                      </View>
+                    )}
+                  </View>
+
+                  <View className="flex-1">
+                    <Text
+                      className="text-white font-extrabold text-sm"
+                      numberOfLines={2}
+                    >
+                      {metadata.text?.trim() || "TikTok Video"}
+                    </Text>
+                    <Text
+                      className="text-social-slate-500 text-xs mt-1 font-semibold"
+                      numberOfLines={1}
+                    >
+                      {metadata.author ? `@${metadata.author}` : "TikTok"}
+                    </Text>
+                    <View className="flex-row gap-2 mt-3">
+                      <Pressable
+                        onPress={onPreview}
+                        className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
+                      >
+                        <IconSymbol
+                          name="play.circle"
+                          size={18}
+                          color={socialPalette.slate500}
+                        />
+                        <Text className="text-white text-[10px] font-black tracking-widest uppercase">
+                          Preview
+                        </Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={onDownloadMp4}
+                        disabled={isSaving}
+                        className="px-4 py-2 rounded-full bg-social-accent active:opacity-90 flex-row items-center gap-2"
+                        style={{ opacity: isSaving ? 0.6 : 1 }}
+                      >
+                        <IconSymbol name="arrow.down" size={18} color="#fff" />
+                        <Text className="text-white text-[10px] font-black tracking-widest uppercase">
+                          {isSaving ? "Saving..." : "Save MP4"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         </View>
 
@@ -188,43 +331,15 @@ export default function HomeScreen() {
           </View>
           <View className="border-2 border-dashed border-white/5 rounded-3xl py-10 items-center justify-center">
             <View className="w-12 h-12 rounded-full items-center justify-center mb-3 bg-social-accent-faint">
-              <IconSymbol name="history" size={28} color={socialPalette.accent} />
+              <IconSymbol
+                name="history"
+                size={28}
+                color={socialPalette.accent}
+              />
             </View>
             <Text className="text-slate-500 text-xs font-medium text-center px-4">
               Belum ada riwayat. Isi link TikTok lalu download.
             </Text>
-          </View>
-        </View>
-
-        <View className="px-6 mb-8">
-          <View className="p-6 rounded-[32px] border border-white/5 overflow-hidden relative">
-            <LinearGradient
-              colors={[socialPalette.cardFrom, socialPalette.bg]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
-              }}
-            />
-            <View className="absolute -right-4 -top-4 opacity-[0.07] pointer-events-none">
-              <IconSymbol name="zap" size={100} color="#fff" />
-            </View>
-            <Text className="text-lg font-extrabold text-white">
-              VideoMAX Pro
-            </Text>
-            <Text className="text-slate-400 text-xs mt-1 mb-4 leading-relaxed">
-              Explore our premium downloader for faster multi-thread
-              downloading.
-            </Text>
-            <Pressable className="self-start px-6 py-3 rounded-full active:opacity-90 bg-social-accent">
-              <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
-                Explore Now
-              </Text>
-            </Pressable>
           </View>
         </View>
       </ScrollView>

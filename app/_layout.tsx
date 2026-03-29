@@ -22,6 +22,8 @@ import "../global.css";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { PermissionProvider } from "@/context/PermissionContext";
+
 const queryClient = new QueryClient();
 
 const socialBg = socialPalette.bg;
@@ -40,22 +42,34 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <SafeAreaProvider>
-          <ThemeProvider value={DefaultTheme}>
-            <SafeAreaView style={{ flex: 1, backgroundColor: socialBg }}>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: socialBg },
-                }}
-              >
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="welcome/index" options={{ headerShown: false }} />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
-            </SafeAreaView>
-          </ThemeProvider>
-        </SafeAreaProvider>
+        <PermissionProvider>
+          <SafeAreaProvider>
+            <ThemeProvider value={DefaultTheme}>
+              <SafeAreaView style={{ flex: 1, backgroundColor: socialBg }}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: { backgroundColor: socialBg },
+                  }}
+                >
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="welcome/index"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="permission/index"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="(tabs)"
+                    options={{ headerShown: false }}
+                  />
+                </Stack>
+              </SafeAreaView>
+            </ThemeProvider>
+          </SafeAreaProvider>
+        </PermissionProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

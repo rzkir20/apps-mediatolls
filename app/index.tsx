@@ -4,7 +4,10 @@ import { useEffect, useRef } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-import { STORAGE_KEY_WELCOME_COMPLETED } from "@/lib/config";
+import {
+  STORAGE_KEY_PERMISSION_SETUP_COMPLETED,
+  STORAGE_KEY_WELCOME_COMPLETED,
+} from "@/lib/config";
 
 export default function Index() {
   const pathname = usePathname();
@@ -21,7 +24,14 @@ export default function Index() {
         STORAGE_KEY_WELCOME_COMPLETED,
       );
       if (completed === "true") {
-        router.replace("/(tabs)/social");
+        const permissionSetupCompleted = await AsyncStorage.getItem(
+          STORAGE_KEY_PERMISSION_SETUP_COMPLETED,
+        );
+        if (permissionSetupCompleted === "true") {
+          router.replace("/(tabs)/social");
+        } else {
+          router.replace("/permission");
+        }
       } else {
         router.replace("/welcome");
       }

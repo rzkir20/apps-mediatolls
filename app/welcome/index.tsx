@@ -1,25 +1,32 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { Inter_500Medium, Inter_700Bold } from "@expo-google-fonts/inter";
+
 import {
-  Inter_500Medium,
-  Inter_700Bold,
-} from "@expo-google-fonts/inter";
-import { useFonts, SpaceGrotesk_700Bold } from "@expo-google-fonts/space-grotesk";
+  useFonts,
+  SpaceGrotesk_700Bold,
+} from "@expo-google-fonts/space-grotesk";
+
 import { LinearGradient } from "expo-linear-gradient";
+
 import { router } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
+
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+
 import React, { useEffect, useRef, useState } from "react";
+
 import { Animated, Pressable, Text, View } from "react-native";
+
 import AnimatedReanimated, {
   Easing,
   FadeInRight,
 } from "react-native-reanimated";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { STORAGE_KEY_WELCOME_COMPLETED } from "@/lib/config";
-import { socialPalette } from "@/lib/pallate";
 
-void SplashScreen.preventAutoHideAsync();
+import { socialPalette } from "@/lib/pallate";
 
 type FeatureRow = {
   title: string;
@@ -38,7 +45,12 @@ type SlideDef = {
 const slides: SlideDef[] = [
   {
     headerIcon: ({ size, color }) => (
-      <Ionicons name="play" size={size} color={color} style={{ marginLeft: 4 }} />
+      <Ionicons
+        name="play"
+        size={size}
+        color={color}
+        style={{ marginLeft: 4 }}
+      />
     ),
     headerIconVariant: "gradient",
     titleLine1: "Download",
@@ -138,7 +150,9 @@ function FeatureCard({ item }: { item: FeatureRow }) {
         {item.icon({ size: 24, color: socialPalette.accent })}
       </View>
       <View className="min-w-0 flex-1">
-        <Text className="font-sans-bold text-base text-white">{item.title}</Text>
+        <Text className="font-sans-bold text-base text-white">
+          {item.title}
+        </Text>
         <Text className="font-sans text-xs font-medium text-slate-400">
           {item.subtitle}
         </Text>
@@ -158,12 +172,6 @@ export default function WelcomeOnboarding() {
     Inter_500Medium,
     Inter_700Bold,
   });
-
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      void SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
 
   useEffect(() => {
     const loop = Animated.loop(
@@ -264,7 +272,10 @@ export default function WelcomeOnboarding() {
               >
                 <View className="h-12 w-12 overflow-hidden rounded-2xl shadow-lg shadow-brand/12 elevation-6">
                   <LinearGradient
-                    colors={[socialPalette.accent, socialPalette.welcomeAccentEnd]}
+                    colors={[
+                      socialPalette.accent,
+                      socialPalette.welcomeAccentEnd,
+                    ]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={{
