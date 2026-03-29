@@ -68,11 +68,15 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
+  const resolvedName = MAPPING[name] ?? "help-outline";
+  const resolvedColor =
+    color != null && typeof color === "string" ? color : "#64748b";
+
   return (
     <MaterialIcons
-      color={color}
+      color={resolvedColor}
       size={size}
-      name={MAPPING[name]}
+      name={resolvedName}
       style={style}
     />
   );

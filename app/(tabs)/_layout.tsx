@@ -17,16 +17,7 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={24} name="house.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="social"
+        name="social/index"
         options={{
           title: "Social",
           tabBarIcon: ({ color }) => (
@@ -35,7 +26,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="files"
+        name="files/index"
         options={{
           title: "Files",
           tabBarIcon: ({ color }) => (
@@ -44,11 +35,20 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="donasi"
+        name="donasi/index"
         options={{
           title: "Donasi",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={24} name="heart.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings/index"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={24} name="settings" color={color} />
           ),
         }}
       />

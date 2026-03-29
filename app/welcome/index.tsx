@@ -20,7 +20,12 @@ import { STORAGE_KEY_WELCOME_COMPLETED } from "@/lib/config";
 
 void SplashScreen.preventAutoHideAsync();
 
+/** Mirrors global.css `--brand` / `--brand-end` (for LinearGradient & vector icons). */
 const ACCENT = "#ff3d57";
+const ACCENT_END = "#f2556a";
+const ACCENT_GLOW_STRONG = "rgba(255, 61, 87, 0.16)";
+const ACCENT_GLOW_SOFT = "rgba(255, 61, 87, 0.07)";
+const ACCENT_GLOW_FADE = "rgba(255, 61, 87, 0)";
 
 type FeatureRow = {
   title: string;
@@ -135,7 +140,7 @@ const slides: SlideDef[] = [
 function FeatureCard({ item }: { item: FeatureRow }) {
   return (
     <View className="flex-row items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4">
-      <View className="h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#ff3d57]/10">
+      <View className="h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand/6">
         {item.icon({ size: 24, color: ACCENT })}
       </View>
       <View className="min-w-0 flex-1">
@@ -212,15 +217,31 @@ export default function WelcomeOnboarding() {
   }
 
   return (
-    <View className="flex-1 overflow-hidden bg-[#05060f]">
+    <View className="flex-1 overflow-hidden bg-welcome">
       <View
         pointerEvents="none"
-        className="absolute -right-20 -top-20 z-0 h-64 w-64 rounded-full bg-[#ff3d57]/10 opacity-90"
-      />
+        className="absolute -right-20 -top-20 z-0 h-64 w-64 overflow-hidden rounded-full opacity-65"
+      >
+        <LinearGradient
+          colors={[ACCENT_GLOW_STRONG, "rgba(255, 61, 87, 0.05)", ACCENT_GLOW_FADE]}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.15, y: 0.15 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 256, height: 256, borderRadius: 128 }}
+        />
+      </View>
       <View
         pointerEvents="none"
-        className="absolute -left-32 top-1/2 z-0 h-80 w-80 rounded-full bg-[#ff3d57]/5 opacity-90"
-      />
+        className="absolute -left-32 top-1/2 z-0 h-80 w-80 overflow-hidden rounded-full opacity-[0.65]"
+      >
+        <LinearGradient
+          colors={[ACCENT_GLOW_SOFT, "rgba(255, 61, 87, 0.03)", ACCENT_GLOW_FADE]}
+          locations={[0, 0.55, 1]}
+          start={{ x: 0, y: 0.4 }}
+          end={{ x: 1, y: 1 }}
+          style={{ width: 320, height: 320, borderRadius: 160 }}
+        />
+      </View>
 
       <View className="z-10 flex-1 flex-col">
         <AnimatedReanimated.View
@@ -239,12 +260,18 @@ export default function WelcomeOnboarding() {
                 className="mb-6"
                 style={{ transform: [{ translateY: floatY }] }}
               >
-                <View className="h-12 w-12 overflow-hidden rounded-2xl shadow-lg shadow-[#ff3d57]/20 elevation-8">
+                <View className="h-12 w-12 overflow-hidden rounded-2xl shadow-lg shadow-brand/12 elevation-6">
                   <LinearGradient
-                    colors={["#ff3d57", "#e11d48"]}
+                    colors={[ACCENT, ACCENT_END]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
-                    className="h-full w-full items-center justify-center"
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 16,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
                     {slide.headerIcon({ size: 24, color: "#ffffff" })}
                   </LinearGradient>
@@ -260,7 +287,7 @@ export default function WelcomeOnboarding() {
               <Text className="text-center font-cabinet text-2xl uppercase leading-none tracking-tight text-white">
                 {slide.titleLine1}
                 {"\n"}
-                <Text className="font-cabinet text-2xl uppercase leading-none tracking-tight text-[#ff3d57]">
+                <Text className="font-cabinet text-2xl uppercase leading-none tracking-tight text-brand-highlight">
                   {slide.titleLine2Accent}
                 </Text>
               </Text>
@@ -284,7 +311,7 @@ export default function WelcomeOnboarding() {
             {slides.map((_, i) => (
               <View
                 key={i}
-                className={`h-2 w-2 rounded-full ${i === currentSlide ? "bg-[#ff3d57]" : "bg-white/10"}`}
+                className={`h-2 w-2 rounded-full ${i === currentSlide ? "bg-brand" : "bg-white/10"}`}
               />
             ))}
           </View>
@@ -304,10 +331,22 @@ export default function WelcomeOnboarding() {
               className="min-w-0 flex-1 active:scale-[0.96] active:opacity-[0.92]"
             >
               <LinearGradient
-                colors={["#ff3d57", "#e11d48"]}
+                colors={[ACCENT, ACCENT_END]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
-                className="rounded-2xl py-4 px-6 shadow-xl shadow-[#ff3d57]/30 elevation-12"
+                style={{
+                  borderRadius: 16,
+                  paddingVertical: 16,
+                  paddingHorizontal: 24,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "100%",
+                  shadowColor: ACCENT,
+                  shadowOffset: { width: 0, height: 6 },
+                  shadowOpacity: 0.16,
+                  shadowRadius: 10,
+                  elevation: 8,
+                }}
               >
                 <Text className="text-center font-cabinet text-sm font-extrabold uppercase tracking-widest text-white">
                   {navLabel}

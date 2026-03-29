@@ -1,6 +1,14 @@
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+import { useFonts } from "expo-font";
+
 import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 
 import { Stack } from "expo-router";
+
+import React from "react";
+
+import { View } from "react-native";
 
 import "react-native-reanimated";
 
@@ -15,6 +23,16 @@ import "../global.css";
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  const [materialIconsLoaded] = useFonts(MaterialIcons.font);
+
+  if (!materialIconsLoaded) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#05060f" }}>
+        <View style={{ flex: 1, backgroundColor: "#05060f" }} />
+      </GestureHandlerRootView>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
@@ -28,6 +46,7 @@ export default function RootLayout() {
                 }}
               >
                 <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="welcome" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               </Stack>
             </SafeAreaView>
