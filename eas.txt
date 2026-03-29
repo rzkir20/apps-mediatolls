@@ -1,0 +1,16 @@
+Step and step production
+
+# Eslint for expo
+npx expo-doctor
+
+# Check Version & update module
+npx expo install --check
+
+# prebuild
+npx expo prebuild --no-install --platform android
+
+# build android
+npx eas-cli build --platform android --profile production
+
+Prepair for dependency
+npx expo install --fix

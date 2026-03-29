@@ -41,7 +41,3 @@ app-example
 # generated native folders
 /ios
 /android
-
-# Windows reserved device names accidentally created as files
-nul
-NUL
