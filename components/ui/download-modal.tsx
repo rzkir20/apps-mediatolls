@@ -55,7 +55,10 @@ export function DownloadProgressModal({
               <Text className="text-[#ff3d57]">{effectivePillText}</Text>
             </View>
 
-            <Text className="text-xl font-bold text-white truncate line-clamp-2 w-full px-4">
+            <Text
+              className="text-xl font-bold text-white w-full px-4 text-center"
+              numberOfLines={2}
+            >
               {fileName || "Download"}
             </Text>
           </View>
@@ -89,7 +92,7 @@ export function DownloadProgressModal({
                 {pct}%
               </Text>
               <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
-                {pct >= 100 ? effectiveSubText : "Completed"}
+                {pct >= 100 ? effectiveSubText : "In progress"}
               </Text>
             </View>
           </View>
@@ -131,7 +134,7 @@ export function DownloadProgressModal({
 
           <View className="w-full flex flex-col gap-3">
             <Pressable
-              disabled={!onPause || pct >= 100 || isSaving}
+              disabled={!onPause || pct >= 100}
               onPress={onPause}
               className="w-full py-4 rounded-2xl flex-row items-center justify-center gap-3 active:opacity-90 disabled:opacity-40"
             >
@@ -171,7 +174,7 @@ export function DownloadProgressModal({
             </Pressable>
 
             <Pressable
-              disabled={!onCancel || pct >= 100 || isSaving}
+              disabled={!onCancel}
               onPress={onCancel}
               className="w-full py-4 rounded-2xl bg-white/5 flex-row items-center justify-center gap-3 active:opacity-90 disabled:opacity-40"
             >

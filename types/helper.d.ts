@@ -65,6 +65,11 @@ type TiktokUiState = {
   previewUrl: string | null;
   saveText: string | null;
 
+  previewWidth: number;
+  photoPreviewIndex: number;
+  coverWidth: number;
+  coverPhotoIndex: number;
+
   isDownloadOpen: boolean;
   downloadPercent: number;
   downloadPillText: string | null;
@@ -74,6 +79,9 @@ type TiktokUiState = {
   downloadSpeedText: string | null;
   downloadRemainingText: string | null;
   downloadTotalText: string | null;
+
+  isDownloadPaused: boolean;
+  isDownloadReadyToSave: boolean;
 };
 
 type ErrorShape = { message?: string; error?: string };

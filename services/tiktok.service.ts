@@ -1,10 +1,14 @@
 import { useCallback, useMemo, useRef } from "react";
 
+import type { LayoutChangeEvent } from "react-native";
+
 import * as Clipboard from "expo-clipboard";
 
 import * as FileSystem from "expo-file-system/legacy";
 
 import * as MediaLibrary from "expo-media-library";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -13,6 +17,9 @@ import { useAppConfig } from "@/lib/config";
 import { getErrorMessage } from "@/components/logs";
 
 const uiKey = ["tiktok", "ui"] as const;
+const historyKey = ["tiktok", "history"] as const;
+const STORAGE_KEY_TIKTOK_HISTORY = "tiktok:history:v1";
+const HISTORY_LIMIT = 30;
 
 function getDefaultUiState(): TiktokUiState {
   return {
@@ -20,6 +27,12 @@ function getDefaultUiState(): TiktokUiState {
     isPreviewOpen: false,
     previewUrl: null,
     saveText: null,
+
+    previewWidth: 0,
+    photoPreviewIndex: 0,
+    coverWidth: 0,
+    coverPhotoIndex: 0,
+
     isDownloadOpen: false,
     downloadPercent: 0,
     downloadPillText: null,
@@ -28,7 +41,29 @@ function getDefaultUiState(): TiktokUiState {
     downloadSpeedText: null,
     downloadRemainingText: null,
     downloadTotalText: null,
+    isDownloadPaused: false,
+    isDownloadReadyToSave: false,
   };
+}
+
+function safeJsonParse<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+async function loadHistory(): Promise<HistoryItem[]> {
+  const parsed = safeJsonParse<HistoryItem[]>(
+    await AsyncStorage.getItem(STORAGE_KEY_TIKTOK_HISTORY),
+  );
+  return Array.isArray(parsed) ? parsed : [];
+}
+
+async function persistHistory(items: HistoryItem[]) {
+  await AsyncStorage.setItem(STORAGE_KEY_TIKTOK_HISTORY, JSON.stringify(items));
 }
 
 function formatBytes(n: number) {
@@ -46,6 +81,8 @@ function formatSeconds(s: number) {
   return `${mm}:${ss}`;
 }
 
+type DownloadKind = "video" | "audio" | "photos";
+
 export function useTiktokController() {
   const { apiUrl } = useAppConfig();
   const baseUrl = apiUrl ?? "";
@@ -54,6 +91,8 @@ export function useTiktokController() {
   const downloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
     null,
   );
+  const downloadedFileUrisRef = useRef<string[]>([]);
+  const downloadKindRef = useRef<DownloadKind>("video");
   const progressRef = useRef<{
     lastTs: number;
     lastBytes: number;
@@ -68,10 +107,22 @@ export function useTiktokController() {
     gcTime: Infinity,
   });
 
+  const history = useQuery({
+    queryKey: historyKey,
+    queryFn: loadHistory,
+    initialData: [],
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+
   const url = ui.data.url;
   const isPreviewOpen = ui.data.isPreviewOpen;
   const previewUrl = ui.data.previewUrl;
   const saveText = ui.data.saveText;
+  const previewWidth = ui.data.previewWidth;
+  const photoPreviewIndex = ui.data.photoPreviewIndex;
+  const coverWidth = ui.data.coverWidth;
+  const coverPhotoIndex = ui.data.coverPhotoIndex;
   const isDownloadOpen = ui.data.isDownloadOpen;
   const downloadPercent = ui.data.downloadPercent;
   const downloadPillText = ui.data.downloadPillText;
@@ -80,6 +131,8 @@ export function useTiktokController() {
   const downloadSpeedText = ui.data.downloadSpeedText;
   const downloadRemainingText = ui.data.downloadRemainingText;
   const downloadTotalText = ui.data.downloadTotalText;
+  const isDownloadPaused = ui.data.isDownloadPaused;
+  const isDownloadReadyToSave = ui.data.isDownloadReadyToSave;
 
   const setUi = useCallback(
     (patch: Partial<TiktokUiState>) => {
@@ -92,6 +145,50 @@ export function useTiktokController() {
   );
 
   const setUrl = useCallback((next: string) => setUi({ url: next }), [setUi]);
+
+  const setHistory = useCallback(
+    async (next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => {
+      const value =
+        typeof next === "function"
+          ? (next as (p: HistoryItem[]) => HistoryItem[])(history.data ?? [])
+          : next;
+      const trimmed = value.slice(0, HISTORY_LIMIT);
+      qc.setQueryData<HistoryItem[]>(historyKey, trimmed);
+      await persistHistory(trimmed);
+    },
+    [qc, history.data],
+  );
+
+  const pushHistory = useCallback(
+    async (meta: TiktokMetadataResponse, originUrl: string) => {
+      const trimmedUrl = originUrl.trim();
+      if (!trimmedUrl) return;
+
+      const isImage = !!meta.images?.length;
+      const cover = isImage ? meta.images?.[0] ?? meta.cover ?? "" : meta.cover ?? "";
+
+      const item: HistoryItem = {
+        id: String(Date.now()),
+        url: trimmedUrl,
+        title: meta.text?.trim() || (isImage ? "TikTok Photos" : "TikTok Video"),
+        author: meta.author ? `@${meta.author}` : undefined,
+        cover,
+        type: isImage ? "Image" : "Video",
+        date: Date.now(),
+      };
+
+      await setHistory((prev) => {
+        const deduped = prev.filter((x) => x.url !== trimmedUrl);
+        return [item, ...deduped];
+      });
+    },
+    [setHistory],
+  );
+
+  const onClearHistory = useCallback(async () => {
+    qc.setQueryData<HistoryItem[]>(historyKey, []);
+    await AsyncStorage.removeItem(STORAGE_KEY_TIKTOK_HISTORY);
+  }, [qc]);
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
@@ -134,12 +231,23 @@ export function useTiktokController() {
     const trimmed = url.trim();
     if (!trimmed || isFetching || !baseUrl) return;
     setUi({ saveText: null });
-    await metadataQuery.refetch();
-  }, [url, isFetching, baseUrl, metadataQuery, setUi]);
+    const res = await metadataQuery.refetch();
+    const data = res.data;
+    if (data) {
+      await pushHistory(data, trimmed);
+    }
+  }, [url, isFetching, baseUrl, metadataQuery, setUi, pushHistory]);
 
   const onPreview = useCallback(() => {
     const trimmed = url.trim();
     if (!trimmed) return;
+
+    // Photo/slideshow post: preview should open without video URL.
+    if (metadata?.images?.length) {
+      setUi({ previewUrl: null, isPreviewOpen: true, saveText: null });
+      return;
+    }
+
     if (!baseUrl) {
       setUi({
         saveText:
@@ -149,7 +257,45 @@ export function useTiktokController() {
     }
     const u = `${baseUrl}/api/tiktok/preview-video?url=${encodeURIComponent(trimmed)}`;
     setUi({ previewUrl: u, isPreviewOpen: true, saveText: null });
-  }, [url, baseUrl, setUi]);
+  }, [url, baseUrl, metadata, setUi]);
+
+  const onPreviewLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const w = e?.nativeEvent?.layout?.width ?? 0;
+      if (w > 0) setUi({ previewWidth: w });
+    },
+    [setUi],
+  );
+
+  const onCoverLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const w = e?.nativeEvent?.layout?.width ?? 0;
+      if (w > 0) setUi({ coverWidth: w });
+    },
+    [setUi],
+  );
+
+  const onPhotoPreviewScrollEnd = useCallback(
+    (e: any) => {
+      const w = previewWidth || 0;
+      if (!w) return;
+      const x = e?.nativeEvent?.contentOffset?.x ?? 0;
+      const idx = Math.round(x / w);
+      setUi({ photoPreviewIndex: Math.max(0, idx) });
+    },
+    [previewWidth, setUi],
+  );
+
+  const onCoverPhotoScrollEnd = useCallback(
+    (e: any) => {
+      const w = coverWidth || 0;
+      if (!w) return;
+      const x = e?.nativeEvent?.contentOffset?.x ?? 0;
+      const idx = Math.round(x / w);
+      setUi({ coverPhotoIndex: Math.max(0, idx) });
+    },
+    [coverWidth, setUi],
+  );
 
   const closePreview = useCallback(() => {
     setUi({ isPreviewOpen: false });
@@ -160,33 +306,26 @@ export function useTiktokController() {
     closeTimeoutRef.current = null;
     downloadRef.current?.cancelAsync().catch(() => {});
     downloadRef.current = null;
+    downloadedFileUrisRef.current = [];
+    downloadKindRef.current = "video";
     progressRef.current = null;
-    setUi({ isDownloadOpen: false });
+    setUi({
+      isDownloadOpen: false,
+      isDownloadPaused: false,
+      isDownloadReadyToSave: false,
+    });
   }, [setUi]);
 
-  const downloadMp4Mutation = useMutation({
-    mutationKey: ["tiktok", "download", "mp4", baseUrl, url.trim()],
-    mutationFn: async () => {
-      const trimmed = url.trim();
-      if (!trimmed || !baseUrl) throw new Error("URL tidak valid");
-
-      // Request only what we need (video/photos). This avoids AUDIO permission issues (esp. in Expo Go).
-      const permission = await MediaLibrary.requestPermissionsAsync(false, [
-        "video",
-        "photo",
-      ] as any);
-      if (permission.status !== "granted") {
-        throw new Error(
-          "Izin penyimpanan ditolak. Aktifkan permission untuk menyimpan video.",
-        );
-      }
-
-      const downloadUrl = `${baseUrl}/api/tiktok/download?url=${encodeURIComponent(trimmed)}`;
+  const downloadSingleMutation = useMutation({
+    mutationKey: ["tiktok", "download", "single", baseUrl, url.trim()],
+    mutationFn: async (args: { downloadUrl: string; ext: "mp4" | "mp3" }) => {
+      const { downloadUrl, ext } = args;
+      if (!downloadUrl) throw new Error("URL download tidak tersedia");
 
       const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
-      const fileNameSafe = `tiktok-${Date.now()}.mp4`;
+      const fileNameSafe = `tiktok-${Date.now()}.${ext}`;
       const fileUri = `${cacheDir}${fileNameSafe}`;
 
       const startedAt = Date.now();
@@ -206,16 +345,15 @@ export function useTiktokController() {
             const dt = Math.max(0.25, (now - prev.lastTs) / 1000);
             const db = Math.max(0, written - prev.lastBytes);
             const inst = db / dt;
-            // simple smoothing
             prev.speedBps = prev.speedBps ? prev.speedBps * 0.7 + inst * 0.3 : inst;
             prev.lastTs = now;
             prev.lastBytes = written;
           }
 
-          const pct =
-            expected > 0 ? Math.round((written / expected) * 100) : 0;
+          const pct = expected > 0 ? Math.round((written / expected) * 100) : 0;
           const spd = progressRef.current?.speedBps ?? 0;
-          const remainingSec = spd > 0 && expected > 0 ? (expected - written) / spd : NaN;
+          const remainingSec =
+            spd > 0 && expected > 0 ? (expected - written) / spd : NaN;
 
           setUi({
             downloadPercent: Math.max(0, Math.min(100, pct)),
@@ -225,7 +363,9 @@ export function useTiktokController() {
               ? formatSeconds(remainingSec)
               : null,
             downloadTotalText:
-              expected > 0 ? `${formatBytes(written)} / ${formatBytes(expected)}` : null,
+              expected > 0
+                ? `${formatBytes(written)} / ${formatBytes(expected)}`
+                : null,
           });
         },
       );
@@ -234,53 +374,179 @@ export function useTiktokController() {
       const file = await downloadResumable.downloadAsync();
       if (!file?.uri) throw new Error("Download gagal");
 
-      setUi({ downloadPillText: "Saving" });
-      const asset = await MediaLibrary.createAssetAsync(file.uri);
-      await MediaLibrary.createAlbumAsync("Media Tools", asset, false).catch(
-        () => {},
-      );
-      return asset;
+      downloadedFileUrisRef.current = [file.uri];
+      setUi({
+        downloadPercent: 100,
+        downloadPillText: "Ready",
+        downloadSubText: "Tap DOWNLOAD untuk simpan",
+        downloadRemainingText: "00:00",
+        isDownloadReadyToSave: true,
+      });
+
+      return file.uri;
     },
     onMutate: async () => {
+      downloadedFileUrisRef.current = [];
       setUi({ saveText: null });
     },
-    onSuccess: () => {
-      setUi({ saveText: "Video berhasil disimpan ke Gallery." });
-    },
     onError: (e) => {
-      setUi({ saveText: getErrorMessage(e, "Gagal menyimpan video") });
+      setUi({ saveText: getErrorMessage(e, "Gagal download") });
     },
   });
 
-  const isSaving = downloadMp4Mutation.isPending;
+  const downloadPhotosMutation = useMutation({
+    mutationKey: ["tiktok", "download", "photos", baseUrl, url.trim()],
+    mutationFn: async (args: { imageUrls: string[] }) => {
+      const imageUrls = args.imageUrls.filter(Boolean);
+      if (!imageUrls.length) throw new Error("Tidak ada foto untuk di-download");
 
-  const onDownloadMp4 = useCallback(async () => {
+      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      if (!cacheDir) throw new Error("Cache directory tidak tersedia");
+
+      downloadedFileUrisRef.current = [];
+      progressRef.current = null;
+      downloadRef.current = null;
+
+      const total = imageUrls.length;
+      for (let i = 0; i < total; i++) {
+        const u = imageUrls[i]!;
+        const fileNameSafe = `tiktok-photo-${Date.now()}-${i + 1}.jpg`;
+        const fileUri = `${cacheDir}${fileNameSafe}`;
+
+        setUi({
+          downloadPillText: "Downloading",
+          downloadSubText: `Photo ${i + 1} / ${total}`,
+          downloadPercent: Math.round((i / total) * 100),
+          downloadSpeedText: null,
+          downloadRemainingText: null,
+          downloadTotalText: `${i} / ${total} photos`,
+        });
+
+        const file = await FileSystem.downloadAsync(u, fileUri, { cache: true });
+        if (!file?.uri) throw new Error("Download foto gagal");
+        downloadedFileUrisRef.current.push(file.uri);
+      }
+
+      setUi({
+        downloadPercent: 100,
+        downloadPillText: "Ready",
+        downloadSubText: `Tap DOWNLOAD untuk simpan (${total} foto)`,
+        downloadRemainingText: "00:00",
+        downloadTotalText: `${total} / ${total} photos`,
+        isDownloadReadyToSave: true,
+      });
+
+      return downloadedFileUrisRef.current;
+    },
+    onMutate: async () => {
+      downloadedFileUrisRef.current = [];
+      setUi({ saveText: null });
+    },
+    onError: (e) => {
+      setUi({ saveText: getErrorMessage(e, "Gagal download foto") });
+    },
+  });
+
+  const saveToGalleryMutation = useMutation({
+    mutationKey: ["tiktok", "save", "gallery", baseUrl, url.trim()],
+    mutationFn: async () => {
+      const uris = downloadedFileUrisRef.current;
+      if (!uris.length) throw new Error("File belum siap");
+
+      const current = await MediaLibrary.getPermissionsAsync();
+      if (current.status !== "granted") {
+        const res = await MediaLibrary.requestPermissionsAsync(true, [
+          "video",
+          "photo",
+          "audio",
+        ] as any);
+        if (res.status !== "granted") {
+          throw new Error("Izin penyimpanan ditolak.");
+        }
+      }
+
+      setUi({ downloadPillText: "Saving" });
+
+      const assets = [];
+      for (const uri of uris) {
+        assets.push(await MediaLibrary.createAssetAsync(uri));
+      }
+
+      const albumName = "Media Tools";
+      const first = assets[0];
+      if (!first) throw new Error("Gagal membuat asset");
+
+      const album = await MediaLibrary.createAlbumAsync(albumName, first, false).catch(
+        async () => {
+          const found = await MediaLibrary.getAlbumAsync(albumName);
+          if (!found) {
+            // If createAlbumAsync failed for other reason, rethrow by forcing asset add.
+            throw new Error("Gagal membuat album");
+          }
+          return found;
+        },
+      );
+
+      if (assets.length > 1) {
+        await MediaLibrary.addAssetsToAlbumAsync(assets.slice(1), album, false).catch(
+          () => {},
+        );
+      }
+
+      return assets;
+    },
+    onSuccess: () => {
+      setUi({
+        saveText: "Berhasil disimpan ke Gallery.",
+        downloadPillText: "Completed",
+        downloadSubText: "Saved to Gallery",
+      });
+    },
+    onError: (e) => {
+      const msg = getErrorMessage(e, "Gagal menyimpan video");
+      setUi({
+        saveText: msg,
+        downloadPillText: "Failed",
+        downloadSubText: msg,
+      });
+    },
+  });
+
+  const isSaving = saveToGalleryMutation.isPending;
+
+  const startDownloadUi = useCallback(
+    (args: { fileName: string; kind: DownloadKind }) => {
+      downloadKindRef.current = args.kind;
+      setUi({
+        downloadFileName: args.fileName,
+        downloadPercent: 0,
+        downloadPillText: "Preparing",
+        downloadSubText: null,
+        isDownloadOpen: true,
+        downloadSpeedText: null,
+        downloadRemainingText: null,
+        downloadTotalText: null,
+        isDownloadPaused: false,
+        isDownloadReadyToSave: false,
+      });
+    },
+    [setUi],
+  );
+
+  const onDownloadVideoMp4 = useCallback(async () => {
     const title = metadata?.text?.trim();
-    setUi({
-      downloadFileName: title || "TikTok Video",
-      downloadPercent: 0,
-      downloadPillText: "Preparing",
-      downloadSubText: null,
-      isDownloadOpen: true,
-      downloadSpeedText: null,
-      downloadRemainingText: null,
-      downloadTotalText: null,
-    });
+    startDownloadUi({ fileName: title || "TikTok Video", kind: "video" });
 
     if (!url.trim() || !baseUrl || isSaving) return;
     try {
-      await downloadMp4Mutation.mutateAsync();
-      setUi({
-        downloadPercent: 100,
-        downloadPillText: "Completed",
-        downloadSubText: "Saved to Gallery",
-        downloadRemainingText: "00:00",
+      const direct = metadata?.videoUrlNoWaterMark || metadata?.videoUrl;
+      const fallback = `${baseUrl}/api/tiktok/download?url=${encodeURIComponent(url.trim())}`;
+      await downloadSingleMutation.mutateAsync({
+        downloadUrl: direct || fallback,
+        ext: "mp4",
       });
-      closeTimeoutRef.current = setTimeout(() => {
-        setUi({ isDownloadOpen: false });
-      }, 900);
     } catch (e) {
-      const msg = getErrorMessage(e, "Gagal menyimpan video");
+      const msg = getErrorMessage(e, "Gagal download video");
       setUi({
         downloadPercent: 100,
         downloadPillText: "Failed",
@@ -288,7 +554,76 @@ export function useTiktokController() {
       });
       throw e;
     }
-  }, [metadata, setUi, url, baseUrl, isSaving, downloadMp4Mutation]);
+  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+
+  const onDownloadAudioMp3 = useCallback(async () => {
+    const title = metadata?.text?.trim();
+    startDownloadUi({ fileName: title ? `${title} (MP3)` : "TikTok Audio", kind: "audio" });
+
+    if (!url.trim() || !baseUrl || isSaving) return;
+    try {
+      const audio = metadata?.audioUrl;
+      if (!audio) throw new Error("Audio tidak tersedia untuk post ini");
+      await downloadSingleMutation.mutateAsync({ downloadUrl: audio, ext: "mp3" });
+    } catch (e) {
+      const msg = getErrorMessage(e, "Gagal download audio");
+      setUi({
+        downloadPercent: 100,
+        downloadPillText: "Failed",
+        downloadSubText: msg,
+      });
+      throw e;
+    }
+  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+
+  const onDownloadPhotos = useCallback(async () => {
+    const title = metadata?.text?.trim();
+    startDownloadUi({ fileName: title ? `${title} (Photos)` : "TikTok Photos", kind: "photos" });
+
+    if (!url.trim() || !baseUrl || isSaving) return;
+    try {
+      const images = (metadata?.images ?? [])?.filter(Boolean) ?? [];
+      if (!images.length) throw new Error("Foto tidak tersedia untuk post ini");
+      await downloadPhotosMutation.mutateAsync({ imageUrls: images });
+    } catch (e) {
+      const msg = getErrorMessage(e, "Gagal download foto");
+      setUi({
+        downloadPercent: 100,
+        downloadPillText: "Failed",
+        downloadSubText: msg,
+      });
+      throw e;
+    }
+  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadPhotosMutation, setUi]);
+
+  const onTogglePauseOrSave = useCallback(async () => {
+    if (downloadPercent >= 100 && isDownloadReadyToSave) {
+      await saveToGalleryMutation.mutateAsync();
+      return;
+    }
+
+    const t = downloadRef.current;
+    if (!t) return;
+
+    if (isDownloadPaused) {
+      await t.resumeAsync();
+      setUi({
+        isDownloadPaused: false,
+        downloadPillText: "Downloading",
+        downloadSubText: null,
+      });
+      return;
+    }
+
+    await t.pauseAsync();
+    setUi({ isDownloadPaused: true, downloadPillText: "Paused", downloadSubText: null });
+  }, [
+    downloadPercent,
+    isDownloadReadyToSave,
+    isDownloadPaused,
+    saveToGalleryMutation,
+    setUi,
+  ]);
 
   return {
     baseUrl,
@@ -297,10 +632,15 @@ export function useTiktokController() {
     isFetching,
     metadata,
     errorText,
+    history: history.data ?? [],
     isPreviewOpen,
     previewUrl,
     isSaving,
     saveText,
+    previewWidth,
+    photoPreviewIndex,
+    coverWidth,
+    coverPhotoIndex,
     isDownloadOpen,
     downloadPercent,
     downloadPillText,
@@ -309,12 +649,22 @@ export function useTiktokController() {
     downloadSpeedText,
     downloadRemainingText,
     downloadTotalText,
+    isDownloadPaused,
+    isDownloadReadyToSave,
     canFetch,
+    onPreviewLayout,
+    onCoverLayout,
+    onPhotoPreviewScrollEnd,
+    onCoverPhotoScrollEnd,
+    onClearHistory,
     closePreview,
     closeDownloadModal,
     onPaste,
     onFetchResult,
     onPreview,
-    onDownloadMp4,
+    onDownloadVideoMp4,
+    onDownloadAudioMp3,
+    onDownloadPhotos,
+    onTogglePauseOrSave,
   };
 }
