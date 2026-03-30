@@ -66,6 +66,8 @@ type TiktokUiState = {
   url: string;
   isPreviewOpen: boolean;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   saveText: string | null;
 
   previewWidth: number;
@@ -94,6 +96,8 @@ type DialogTiktokProps = {
 
   metadata: TiktokMetadataResponse | null;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   isSaving: boolean;
   saveText: string | null;
 
@@ -114,6 +118,8 @@ type DialogInstagramProps = {
 
   metadata: InstagramMetadataResponse | null;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   isSaving: boolean;
   saveText: string | null;
 

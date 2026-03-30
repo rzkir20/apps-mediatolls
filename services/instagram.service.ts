@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -19,11 +19,18 @@ const historyKey = ["instagram", "history"] as const;
 const STORAGE_KEY_INSTAGRAM_HISTORY = "instagram:history:v1";
 const HISTORY_LIMIT = 30;
 
+function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
+  const key = encodeURIComponent(requestUrl).replace(/%/g, "").slice(0, 120);
+  return `${cacheDir}preview-instagram-${key}.mp4`;
+}
+
 type InstagramUiState = {
   url: string;
 
   isPreviewOpen: boolean;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   saveText: string | null;
 
   isDownloadOpen: boolean;
@@ -46,6 +53,8 @@ function getDefaultUiState(): InstagramUiState {
 
     isPreviewOpen: false,
     previewUrl: null,
+    previewLoadPercent: 0,
+    previewLoadText: null,
     saveText: null,
 
     isDownloadOpen: false,
@@ -141,6 +150,12 @@ export function useInstagramController() {
     useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(null);
   const downloadedFileUrisRef = useRef<string[]>([]);
   const downloadKindRef = useRef<DownloadKind>("video");
+  const historyHydratedRef = useRef(false);
+  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
+    null,
+  );
+  const previewRequestIdRef = useRef(0);
+  const previewCacheRef = useRef<Record<string, string>>({});
   const progressRef = useRef<{
     lastTs: number;
     lastBytes: number;
@@ -166,6 +181,8 @@ export function useInstagramController() {
   const url = ui.data.url;
   const isPreviewOpen = ui.data.isPreviewOpen;
   const previewUrl = ui.data.previewUrl;
+  const previewLoadPercent = ui.data.previewLoadPercent;
+  const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
 
   const isDownloadOpen = ui.data.isDownloadOpen;
@@ -195,16 +212,25 @@ export function useInstagramController() {
     async (
       next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[]),
     ) => {
+      const current = qc.getQueryData<HistoryItem[]>(historyKey) ?? [];
       const value =
         typeof next === "function"
-          ? (next as (p: HistoryItem[]) => HistoryItem[])(history.data ?? [])
+          ? (next as (p: HistoryItem[]) => HistoryItem[])(current)
           : next;
       const trimmed = value.slice(0, HISTORY_LIMIT);
       qc.setQueryData<HistoryItem[]>(historyKey, trimmed);
       await persistHistory(trimmed);
     },
-    [qc, history.data],
+    [qc],
   );
+
+  useEffect(() => {
+    if (historyHydratedRef.current) return;
+    historyHydratedRef.current = true;
+    void loadHistory().then((items) => {
+      qc.setQueryData<HistoryItem[]>(historyKey, items.slice(0, HISTORY_LIMIT));
+    });
+  }, [qc]);
 
   const pushHistory = useCallback(
     async (meta: InstagramMetadataResponse, originUrl: string) => {
@@ -290,7 +316,7 @@ export function useInstagramController() {
     }
   }, [url, isFetching, baseUrl, metadataQuery, setUi, pushHistory]);
 
-  const onPreview = useCallback(() => {
+  const onPreview = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed) return;
 
@@ -309,11 +335,115 @@ export function useInstagramController() {
     }
 
     const u = `${baseUrl}/api/instagram/preview-video?url=${encodeURIComponent(trimmed)}`;
-    setUi({ previewUrl: u, isPreviewOpen: true, saveText: null });
-  }, [url, baseUrl, metadata, setUi]);
+    const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+    if (!cacheDir) {
+      setUi({ saveText: "Cache directory tidak tersedia." });
+      return;
+    }
+
+    const fromRef = previewCacheRef.current[trimmed];
+    if (fromRef) {
+      const info = await FileSystem.getInfoAsync(fromRef);
+      if (info.exists && !info.isDirectory) {
+        setUi({
+          previewUrl: fromRef,
+          isPreviewOpen: true,
+          previewLoadPercent: 100,
+          previewLoadText: "Siap diputar (cache)",
+          saveText: null,
+        });
+        return;
+      }
+      delete previewCacheRef.current[trimmed];
+    }
+
+    const previewUri = getPreviewCacheUri(cacheDir, u);
+    const info = await FileSystem.getInfoAsync(previewUri);
+    if (info.exists && !info.isDirectory) {
+      previewCacheRef.current[trimmed] = previewUri;
+      setUi({
+        previewUrl: previewUri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar (cache)",
+        saveText: null,
+      });
+      return;
+    }
+
+    previewRequestIdRef.current += 1;
+    const requestId = previewRequestIdRef.current;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+    setUi({
+      previewUrl: null,
+      isPreviewOpen: true,
+      previewLoadPercent: 0,
+      previewLoadText: "Menghubungi server...",
+      saveText: null,
+    });
+    try {
+      const task = FileSystem.createDownloadResumable(
+        u,
+        previewUri,
+        { cache: true },
+        (p) => {
+          if (previewRequestIdRef.current !== requestId) return;
+          const written = p.totalBytesWritten ?? 0;
+          const expected = p.totalBytesExpectedToWrite ?? 0;
+          if (expected > 0) {
+            const pct = Math.round((written / expected) * 100);
+            setUi({
+              previewLoadPercent: Math.max(0, Math.min(99, pct)),
+              previewLoadText: "Mengunduh preview...",
+            });
+            return;
+          }
+          qc.setQueryData<InstagramUiState>(uiKey, (prev) => {
+            const current = prev ?? getDefaultUiState();
+            return {
+              ...current,
+              previewLoadPercent: Math.min(95, current.previewLoadPercent + 2),
+              previewLoadText: "Mengunduh preview...",
+            };
+          });
+        },
+      );
+      previewDownloadRef.current = task;
+      const file = await task.downloadAsync();
+      if (previewRequestIdRef.current !== requestId) return;
+      if (!file?.uri) throw new Error("Gagal menyiapkan preview video");
+      previewCacheRef.current[trimmed] = file.uri;
+      setUi({
+        previewUrl: file.uri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar",
+        saveText: null,
+      });
+    } catch (e) {
+      if (previewRequestIdRef.current !== requestId) return;
+      setUi({
+        isPreviewOpen: false,
+        previewUrl: null,
+        previewLoadPercent: 0,
+        previewLoadText: null,
+        saveText: getErrorMessage(e, "Gagal memuat preview video"),
+      });
+    } finally {
+      if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
+    }
+  }, [url, baseUrl, metadata, qc, setUi]);
 
   const closePreview = useCallback(() => {
-    setUi({ isPreviewOpen: false });
+    previewRequestIdRef.current += 1;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+    setUi({
+      isPreviewOpen: false,
+      previewLoadPercent: 0,
+      previewLoadText: null,
+    });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -629,6 +759,8 @@ export function useInstagramController() {
     history: history.data ?? [],
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     isDownloadOpen,

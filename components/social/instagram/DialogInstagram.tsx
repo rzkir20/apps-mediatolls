@@ -6,10 +6,11 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { PreviewVideo } from "@/components/ui/helper";
 
+import LoadingMediaPlayer from "@/components/LoadingMediaPlayer";
+
 import { Dialog } from "@/components/ui/dialog";
 
 import {
-  ActivityIndicator,
   LayoutChangeEvent,
   Pressable,
   ScrollView,
@@ -24,6 +25,8 @@ export function DialogInstagram({
   onClose,
   metadata,
   previewUrl,
+  previewLoadPercent,
+  previewLoadText,
   isSaving,
   saveText,
   onDownloadVideoMp4,
@@ -167,9 +170,10 @@ export function DialogInstagram({
       ) : !!previewUrl ? (
         <PreviewVideo uri={previewUrl} isVisible={isOpen} />
       ) : (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#fff" />
-        </View>
+        <LoadingMediaPlayer
+          progressPercent={previewLoadPercent}
+          statusText={previewLoadText ?? saveText ?? "Menyiapkan preview..."}
+        />
       )}
     </Dialog>
   );

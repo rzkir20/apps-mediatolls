@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -19,6 +19,11 @@ const historyKey = ["youtube", "history"] as const;
 const STORAGE_KEY_YOUTUBE_HISTORY = "youtube:history:v1";
 const HISTORY_LIMIT = 30;
 const PLATFORM = "youtube";
+
+function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
+  const key = encodeURIComponent(requestUrl).replace(/%/g, "").slice(0, 120);
+  return `${cacheDir}preview-youtube-${key}.mp4`;
+}
 
 type YoutubeUiState = {
   url: string;
@@ -170,6 +175,12 @@ export function useYoutubeController() {
     useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(null);
   const downloadedFileUrisRef = useRef<string[]>([]);
   const downloadKindRef = useRef<DownloadKind>("video");
+  const historyHydratedRef = useRef(false);
+  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
+    null,
+  );
+  const previewRequestIdRef = useRef(0);
+  const previewCacheRef = useRef<Record<string, string>>({});
   const progressRef = useRef<{
     lastTs: number;
     lastBytes: number;
@@ -228,16 +239,25 @@ export function useYoutubeController() {
 
   const setHistory = useCallback(
     async (next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => {
+      const current = qc.getQueryData<HistoryItem[]>(historyKey) ?? [];
       const value =
         typeof next === "function"
-          ? (next as (p: HistoryItem[]) => HistoryItem[])(history.data ?? [])
+          ? (next as (p: HistoryItem[]) => HistoryItem[])(current)
           : next;
       const trimmed = value.slice(0, HISTORY_LIMIT);
       qc.setQueryData<HistoryItem[]>(historyKey, trimmed);
       await persistHistory(trimmed);
     },
-    [qc, history.data],
+    [qc],
   );
+
+  useEffect(() => {
+    if (historyHydratedRef.current) return;
+    historyHydratedRef.current = true;
+    void loadHistory().then((items) => {
+      qc.setQueryData<HistoryItem[]>(historyKey, items.slice(0, HISTORY_LIMIT));
+    });
+  }, [qc]);
 
   const pushHistory = useCallback(
     async (meta: YoutubeMetadataResponse, originUrl: string) => {
@@ -333,7 +353,7 @@ export function useYoutubeController() {
     }
   }, [url, isFetching, baseUrl, metadataQuery, setUi, pushHistory]);
 
-  const onPreview = useCallback(() => {
+  const onPreview = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed) return;
 
@@ -362,10 +382,59 @@ export function useYoutubeController() {
       u = `${info.previewVideoUrl}&quality=${backendIndex}`;
     }
 
-    setUi({ previewUrl: u, isPreviewOpen: true, saveText: null });
+    const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+    if (!cacheDir) {
+      setUi({ saveText: "Cache directory tidak tersedia." });
+      return;
+    }
+    const cacheKey = `${trimmed}::${selectedFormatIndex}`;
+    const fromRef = previewCacheRef.current[cacheKey];
+    if (fromRef) {
+      const info = await FileSystem.getInfoAsync(fromRef);
+      if (info.exists && !info.isDirectory) {
+        setUi({ previewUrl: fromRef, isPreviewOpen: true, saveText: null });
+        return;
+      }
+      delete previewCacheRef.current[cacheKey];
+    }
+
+    const previewUri = getPreviewCacheUri(cacheDir, u);
+    const cachedInfo = await FileSystem.getInfoAsync(previewUri);
+    if (cachedInfo.exists && !cachedInfo.isDirectory) {
+      previewCacheRef.current[cacheKey] = previewUri;
+      setUi({ previewUrl: previewUri, isPreviewOpen: true, saveText: null });
+      return;
+    }
+
+    previewRequestIdRef.current += 1;
+    const requestId = previewRequestIdRef.current;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+    setUi({ previewUrl: null, isPreviewOpen: true, saveText: null });
+    try {
+      const task = FileSystem.createDownloadResumable(u, previewUri, { cache: true });
+      previewDownloadRef.current = task;
+      const file = await task.downloadAsync();
+      if (previewRequestIdRef.current !== requestId) return;
+      if (!file?.uri) throw new Error("Gagal menyiapkan preview video");
+      previewCacheRef.current[cacheKey] = file.uri;
+      setUi({ previewUrl: file.uri, isPreviewOpen: true, saveText: null });
+    } catch (e) {
+      if (previewRequestIdRef.current !== requestId) return;
+      setUi({
+        isPreviewOpen: false,
+        previewUrl: null,
+        saveText: getErrorMessage(e, "Gagal memuat preview video"),
+      });
+    } finally {
+      if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
+    }
   }, [url, baseUrl, videoInfo, selectedFormatIndex, setUi]);
 
   const closePreview = useCallback(() => {
+    previewRequestIdRef.current += 1;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
     setUi({ isPreviewOpen: false });
   }, [setUi]);
 

@@ -4,9 +4,11 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { PreviewVideo } from "@/components/ui/helper";
 
+import LoadingMediaPlayer from "@/components/LoadingMediaPlayer";
+
 import { Dialog } from "@/components/ui/dialog";
 
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { socialPalette } from "@/lib/pallate";
 
@@ -94,9 +96,10 @@ export function DialogYoutube({
       {!!previewUrl ? (
         <PreviewVideo uri={previewUrl} isVisible={isOpen} />
       ) : (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#fff" />
-        </View>
+        <LoadingMediaPlayer
+          progressPercent={0}
+          statusText={saveText ?? "Menyiapkan preview..."}
+        />
       )}
     </Dialog>
   );

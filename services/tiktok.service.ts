@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import type { LayoutChangeEvent } from "react-native";
 
@@ -21,11 +21,18 @@ const historyKey = ["tiktok", "history"] as const;
 const STORAGE_KEY_TIKTOK_HISTORY = "tiktok:history:v1";
 const HISTORY_LIMIT = 30;
 
+function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
+  const key = encodeURIComponent(requestUrl).replace(/%/g, "").slice(0, 120);
+  return `${cacheDir}preview-${key}.mp4`;
+}
+
 function getDefaultUiState(): TiktokUiState {
   return {
     url: "",
     isPreviewOpen: false,
     previewUrl: null,
+    previewLoadPercent: 0,
+    previewLoadText: null,
     saveText: null,
 
     previewWidth: 0,
@@ -91,8 +98,14 @@ export function useTiktokController() {
   const downloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
     null,
   );
+  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
+    null,
+  );
+  const previewRequestIdRef = useRef(0);
+  const previewCacheRef = useRef<Record<string, string>>({});
   const downloadedFileUrisRef = useRef<string[]>([]);
   const downloadKindRef = useRef<DownloadKind>("video");
+  const historyHydratedRef = useRef(false);
   const progressRef = useRef<{
     lastTs: number;
     lastBytes: number;
@@ -119,6 +132,8 @@ export function useTiktokController() {
   const isPreviewOpen = ui.data.isPreviewOpen;
   const previewUrl = ui.data.previewUrl;
   const saveText = ui.data.saveText;
+  const previewLoadPercent = ui.data.previewLoadPercent;
+  const previewLoadText = ui.data.previewLoadText;
   const previewWidth = ui.data.previewWidth;
   const photoPreviewIndex = ui.data.photoPreviewIndex;
   const coverWidth = ui.data.coverWidth;
@@ -148,16 +163,25 @@ export function useTiktokController() {
 
   const setHistory = useCallback(
     async (next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => {
+      const current = qc.getQueryData<HistoryItem[]>(historyKey) ?? [];
       const value =
         typeof next === "function"
-          ? (next as (p: HistoryItem[]) => HistoryItem[])(history.data ?? [])
+          ? (next as (p: HistoryItem[]) => HistoryItem[])(current)
           : next;
       const trimmed = value.slice(0, HISTORY_LIMIT);
       qc.setQueryData<HistoryItem[]>(historyKey, trimmed);
       await persistHistory(trimmed);
     },
-    [qc, history.data],
+    [qc],
   );
+
+  useEffect(() => {
+    if (historyHydratedRef.current) return;
+    historyHydratedRef.current = true;
+    void loadHistory().then((items) => {
+      qc.setQueryData<HistoryItem[]>(historyKey, items.slice(0, HISTORY_LIMIT));
+    });
+  }, [qc]);
 
   const pushHistory = useCallback(
     async (meta: TiktokMetadataResponse, originUrl: string) => {
@@ -238,7 +262,7 @@ export function useTiktokController() {
     }
   }, [url, isFetching, baseUrl, metadataQuery, setUi, pushHistory]);
 
-  const onPreview = useCallback(() => {
+  const onPreview = useCallback(async () => {
     const trimmed = url.trim();
     if (!trimmed) return;
 
@@ -256,7 +280,96 @@ export function useTiktokController() {
       return;
     }
     const u = `${baseUrl}/api/tiktok/preview-video?url=${encodeURIComponent(trimmed)}`;
-    setUi({ previewUrl: u, isPreviewOpen: true, saveText: null });
+    const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+    if (!cacheDir) {
+      setUi({ saveText: "Cache directory tidak tersedia." });
+      return;
+    }
+    const cachedFromRef = previewCacheRef.current[trimmed];
+    if (cachedFromRef) {
+      const info = await FileSystem.getInfoAsync(cachedFromRef);
+      if (info.exists && !info.isDirectory) {
+        setUi({
+          previewUrl: cachedFromRef,
+          isPreviewOpen: true,
+          previewLoadPercent: 100,
+          previewLoadText: "Siap diputar (cache)",
+          saveText: null,
+        });
+        return;
+      }
+      delete previewCacheRef.current[trimmed];
+    }
+
+    const previewUri = getPreviewCacheUri(cacheDir, u);
+    const cachedInfo = await FileSystem.getInfoAsync(previewUri);
+    if (cachedInfo.exists && !cachedInfo.isDirectory) {
+      previewCacheRef.current[trimmed] = previewUri;
+      setUi({
+        previewUrl: previewUri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar (cache)",
+        saveText: null,
+      });
+      return;
+    }
+
+    previewRequestIdRef.current += 1;
+    const requestId = previewRequestIdRef.current;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+
+    setUi({
+      previewUrl: null,
+      isPreviewOpen: true,
+      previewLoadPercent: 0,
+      previewLoadText: "Menghubungi server...",
+      saveText: null,
+    });
+
+    try {
+      const task = FileSystem.createDownloadResumable(
+        u,
+        previewUri,
+        { cache: true },
+        (p) => {
+          if (previewRequestIdRef.current !== requestId) return;
+          const written = p.totalBytesWritten ?? 0;
+          const expected = p.totalBytesExpectedToWrite ?? 0;
+          const pct = expected > 0 ? Math.round((written / expected) * 100) : 0;
+          setUi({
+            previewLoadPercent: Math.max(0, Math.min(99, pct)),
+            previewLoadText: "Mengunduh preview...",
+          });
+        },
+      );
+      previewDownloadRef.current = task;
+      const file = await task.downloadAsync();
+      if (previewRequestIdRef.current !== requestId) return;
+      if (!file?.uri) throw new Error("Gagal menyiapkan preview video");
+      previewCacheRef.current[trimmed] = file.uri;
+
+      setUi({
+        previewUrl: file.uri,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar",
+      });
+    } catch (e) {
+      if (previewRequestIdRef.current !== requestId) return;
+      const msg = getErrorMessage(e, "Gagal memuat preview video");
+      setUi({
+        previewUrl: null,
+        previewLoadPercent: 0,
+        previewLoadText: null,
+        saveText: msg,
+        isPreviewOpen: false,
+      });
+    } finally {
+      if (previewRequestIdRef.current === requestId) {
+        previewDownloadRef.current = null;
+      }
+    }
   }, [url, baseUrl, metadata, setUi]);
 
   const onPreviewLayout = useCallback(
@@ -298,7 +411,14 @@ export function useTiktokController() {
   );
 
   const closePreview = useCallback(() => {
-    setUi({ isPreviewOpen: false });
+    previewRequestIdRef.current += 1;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+    setUi({
+      isPreviewOpen: false,
+      previewLoadPercent: 0,
+      previewLoadText: null,
+    });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -635,6 +755,8 @@ export function useTiktokController() {
     history: history.data ?? [],
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     previewWidth,

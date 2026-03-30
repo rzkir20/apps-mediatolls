@@ -54,6 +54,8 @@ export default function HomeScreen() {
     history,
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     previewWidth,
@@ -136,6 +138,8 @@ export default function HomeScreen() {
         onClose={closePreview}
         metadata={metadata}
         previewUrl={previewUrl}
+        previewLoadPercent={previewLoadPercent}
+        previewLoadText={previewLoadText}
         isSaving={isSaving}
         saveText={saveText}
         previewWidth={previewWidth}

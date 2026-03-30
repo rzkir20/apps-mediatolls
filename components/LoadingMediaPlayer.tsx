@@ -4,8 +4,6 @@ import { Animated, Easing, Text, View } from "react-native";
 
 import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 
-import { socialPalette } from "@/lib/pallate";
-
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 type LoadingMediaPlayerProps = {
@@ -16,22 +14,24 @@ type LoadingMediaPlayerProps = {
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-function clamp01(n: number) {
+function normalizePercent(n: number) {
   if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(1, n));
-}
-
-function clampPercent(n: number) {
-  if (!Number.isFinite(n)) return 0;
-  return Math.max(0, Math.min(100, n));
+  // Sync with tiktok.service progress style:
+  // use integer percentage in range 0..100.
+  const raw = n <= 1 ? n * 100 : n;
+  return Math.max(0, Math.min(100, Math.round(raw)));
 }
 
 export default function LoadingMediaPlayer({
   progressPercent = 68,
   statusText = "Memuat media...",
 }: LoadingMediaPlayerProps) {
-  const pct = clampPercent(progressPercent);
-  const progress01 = clamp01(pct / 100);
+  const BG_DARK = "#05060f";
+  const PRIMARY = "#ff3d57";
+  const ACCENT_ORANGE = "#fb923c";
+
+  const pct = normalizePercent(progressPercent);
+  const progress01 = pct / 100;
 
   const radius = 70;
   const circumference = useMemo(() => 2 * Math.PI * radius, [radius]);
@@ -102,10 +102,10 @@ export default function LoadingMediaPlayer({
   }, [iconSpin, pulse, ringReverse, ringSlow]);
 
   useEffect(() => {
-    dashOffset.setValue(circumference);
+    dashOffset.stopAnimation();
     Animated.timing(dashOffset, {
       toValue: targetDashOffset,
-      duration: 2500,
+      duration: 450,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
       useNativeDriver: false,
     }).start();
@@ -132,7 +132,7 @@ export default function LoadingMediaPlayer({
   return (
     <View
       className="w-full h-full items-center justify-center relative overflow-hidden"
-      style={{ backgroundColor: socialPalette.bg }}
+      style={{ backgroundColor: BG_DARK }}
     >
       <View className="relative items-center justify-center mb-16">
         <Animated.View
@@ -178,10 +178,10 @@ export default function LoadingMediaPlayer({
             >
               <Stop
                 offset="0%"
-                stopColor={socialPalette.accent}
+                stopColor={PRIMARY}
                 stopOpacity={1}
               />
-              <Stop offset="100%" stopColor="#fb923c" stopOpacity={1} />
+              <Stop offset="100%" stopColor={ACCENT_ORANGE} stopOpacity={1} />
             </LinearGradient>
           </Defs>
 
@@ -204,10 +204,11 @@ export default function LoadingMediaPlayer({
             className="w-14 h-14 rounded-full items-center justify-center mb-4"
             style={{
               backgroundColor: "rgba(255,61,87,0.05)",
+              opacity: 0.8,
               transform: [{ rotate: iconRotate }],
             }}
           >
-            <IconSymbol name="play" size={22} color="rgba(255,61,87,0.80)" />
+            <IconSymbol name="play" size={22} color={PRIMARY} />
           </Animated.View>
 
           <View className="items-center">

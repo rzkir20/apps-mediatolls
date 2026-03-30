@@ -67,6 +67,8 @@ export default function InstagramScreen() {
     history,
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     isDownloadOpen,
@@ -153,6 +155,8 @@ export default function InstagramScreen() {
         onClose={closePreview}
         metadata={metadata}
         previewUrl={previewUrl}
+        previewLoadPercent={previewLoadPercent}
+        previewLoadText={previewLoadText}
         isSaving={isSaving}
         saveText={saveText}
         onDownloadVideoMp4={onDownloadVideoMp4}
