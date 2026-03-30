@@ -25,6 +25,7 @@ export function DownloadProgressModal({
   qualityText,
   isPaused,
   isSaving,
+  allowActionWhenCompleted,
   pauseLabel,
   cancelLabel,
   onPause,
@@ -134,7 +135,7 @@ export function DownloadProgressModal({
 
           <View className="w-full flex flex-col gap-3">
             <Pressable
-              disabled={!onPause || pct >= 100}
+              disabled={!onPause || (!allowActionWhenCompleted && pct >= 100)}
               onPress={onPause}
               className="w-full py-4 rounded-2xl flex-row items-center justify-center gap-3 active:opacity-90 disabled:opacity-40"
             >

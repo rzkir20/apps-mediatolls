@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEvent } from "expo";
+
+import { useEffect, useRef, useState } from "react";
 
 import { useVideoPlayer, VideoView } from "expo-video";
 
 import { socialPalette } from "@/lib/pallate";
 
-import { View, Text, Pressable, Linking } from "react-native";
+import { ActivityIndicator, Linking, Pressable, Text, View } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
@@ -153,16 +155,24 @@ export function PreviewVideo({
 }) {
   const isVisibleRef = useRef(isVisible);
   isVisibleRef.current = isVisible;
+  const [isReplacing, setIsReplacing] = useState(false);
 
   const player = useVideoPlayer(null, (p: any) => {
     p.loop = true;
   });
 
+  const { status } = useEvent(player as any, "statusChange", {
+    status: (player as any).status,
+  });
+
   useEffect(() => {
     if (!uri) return;
     let cancelled = false;
+    setIsReplacing(true);
     void player.replaceAsync({ uri, contentType: "auto" }).then(() => {
-      if (!cancelled && isVisibleRef.current) player.play();
+      if (cancelled) return;
+      setIsReplacing(false);
+      if (isVisibleRef.current) player.play();
     });
     return () => {
       cancelled = true;
@@ -182,6 +192,25 @@ export function PreviewVideo({
         contentFit="contain"
         nativeControls
       />
+      {uri && (isReplacing || status === "loading" || status === "idle") ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(0,0,0,0.35)",
+            zIndex: 10,
+            elevation: 10,
+          }}
+        >
+          <ActivityIndicator color="#fff" />
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -117,6 +117,7 @@ export default function HomeScreen() {
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
+        allowActionWhenCompleted={isDownloadReadyToSave}
         pauseLabel={
           downloadPercent >= 100 && isDownloadReadyToSave
             ? "DOWNLOAD"
@@ -497,11 +498,7 @@ export default function HomeScreen() {
                       )}
                       {!!item.cover ? (
                         <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                          <IconSymbol
-                            name={typeIcon}
-                            size={12}
-                            color="#fff"
-                          />
+                          <IconSymbol name={typeIcon} size={12} color="#fff" />
                         </View>
                       ) : null}
                     </View>

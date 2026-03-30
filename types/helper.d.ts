@@ -41,6 +41,8 @@ type DownloadProgressModalProps = {
   isPaused?: boolean;
   isSaving?: boolean;
 
+  allowActionWhenCompleted?: boolean; // allow CTA click at 100% (e.g. "DOWNLOAD")
+
   pauseLabel?: string; // default "PAUSE DOWNLOAD"
   cancelLabel?: string; // default "CANCEL"
 
@@ -131,6 +133,40 @@ type DialogYoutubeProps = {
 
   onDownloadVideoMp4: () => void;
   onDownloadAudioMp3: () => void;
+};
+
+//======================= Facebook Dialog Types =======================//
+type DialogFacebookProps = {
+  isOpen: boolean;
+  onClose: () => void;
+
+  previewUrl: string | null;
+  isSaving: boolean;
+  saveText: string | null;
+
+  onDownloadVideoMp4: () => void;
+};
+
+//======================= Facebook Types =======================//
+type FacebookUiState = {
+  url: string;
+
+  isPreviewOpen: boolean;
+  previewUrl: string | null;
+  saveText: string | null;
+
+  isDownloadOpen: boolean;
+  downloadPercent: number;
+  downloadPillText: string | null;
+  downloadSubText: string | null;
+  downloadFileName: string;
+
+  downloadSpeedText: string | null;
+  downloadRemainingText: string | null;
+  downloadTotalText: string | null;
+
+  isDownloadPaused: boolean;
+  isDownloadReadyToSave: boolean;
 };
 
 //======================= Social Header Types =======================//

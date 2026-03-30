@@ -6,9 +6,7 @@ import { DefaultTheme, ThemeProvider } from "@react-navigation/native";
 
 import { Stack } from "expo-router";
 
-import React from "react";
-
-import { View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
 
 import "react-native-reanimated";
 
@@ -24,17 +22,30 @@ import { socialPalette } from "@/lib/pallate";
 
 import { PermissionProvider } from "@/context/PermissionContext";
 
+import SplashScreen from "@/components/SplashScreen";
+
 const queryClient = new QueryClient();
 
 const socialBg = socialPalette.bg;
 
 export default function RootLayout() {
   const [materialIconsLoaded] = useFonts(MaterialIcons.font);
+  const startedAtMsRef = useRef<number>(Date.now());
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
 
-  if (!materialIconsLoaded) {
+  useEffect(() => {
+    const MIN_SPLASH_MS = 3200;
+    const elapsed = Date.now() - startedAtMsRef.current;
+    const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+
+    const t = setTimeout(() => setMinSplashElapsed(true), remaining);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!materialIconsLoaded || !minSplashElapsed) {
     return (
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: socialBg }}>
-        <View style={{ flex: 1, backgroundColor: socialBg }} />
+        <SplashScreen minDurationMs={3200} />
       </GestureHandlerRootView>
     );
   }

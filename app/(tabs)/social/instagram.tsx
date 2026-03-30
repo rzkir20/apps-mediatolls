@@ -134,6 +134,7 @@ export default function InstagramScreen() {
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
+        allowActionWhenCompleted={isDownloadReadyToSave}
         pauseLabel={
           downloadPercent >= 100 && isDownloadReadyToSave
             ? "DOWNLOAD"
