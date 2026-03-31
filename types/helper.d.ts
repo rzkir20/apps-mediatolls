@@ -220,3 +220,19 @@ type SocialHeaderProps = {
 };
 
 type ErrorShape = { message?: string; error?: string };
+
+//======================= Supported Format Cards Types =======================//
+type SupportedFormatCard = {
+  title: string;
+  sub: string;
+  icon: string;
+  fullWidth?: boolean;
+};
+
+type SupportedFormatCardsProps = {
+  cards: SupportedFormatCard[];
+  onPressCard?: (card: SupportedFormatCard) => void;
+  containerClassName?: string;
+  cardClassName?: string;
+  iconBgClassName?: string;
+};

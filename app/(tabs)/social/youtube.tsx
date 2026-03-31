@@ -2,9 +2,13 @@ import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
 
+import { useState } from "react";
+
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
+import { BottomSheets } from "@/components/BottomSheets";
 
 import {
   Linking,
@@ -13,6 +17,7 @@ import {
   Share,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -24,50 +29,23 @@ import { DialogYoutube } from "@/components/social/youtube/DialogYoutube";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { SupportedFormatCards } from "@/components/ui/card";
+
 import { useYoutubeController } from "@/services/youtube.service";
 
-function historyTypeIconName(
-  type: HistoryItem["type"],
-):
-  | "history.type.video"
-  | "history.type.image"
-  | "history.type.music"
-  | "photo" {
-  switch (type) {
-    case "Video":
-      return "history.type.video";
-    case "Image":
-      return "history.type.image";
-    case "Music":
-      return "history.type.music";
-    default:
-      return "photo";
-  }
-}
-
-const SUPPORTED_FORMAT_CARDS = [
-  {
-    title: "MP4 / 720p",
-    sub: "Standard HD",
-    icon: "tv" as const,
-    fullWidth: false,
-  },
-  {
-    title: "MP4 / 1080p",
-    sub: "Full High Def",
-    icon: "monitor" as const,
-    fullWidth: false,
-  },
-  {
-    title: "MP3 Audio Only",
-    sub: "High Quality 320kbps Extraction",
-    icon: "music.note" as const,
-    fullWidth: true,
-  },
-];
+import {
+  historyTypeIconName,
+  SUPPORTED_FORMAT_CARDS,
+} from "@/components/ui/helper";
 
 export default function YoutubeScreen() {
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
+  const [isQualitySheetOpen, setIsQualitySheetOpen] = useState(false);
+  const qualitySheetBodyHeight = Math.max(
+    220,
+    Math.min(420, Math.round(windowHeight * 0.45)),
+  );
 
   const {
     url,
@@ -210,7 +188,7 @@ export default function YoutubeScreen() {
               BE DIFFERENT
             </Text>
           </View>
-          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-8">
+          <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-3">
             Download YouTube{"\n"}
             <Text className="text-social-accent">Video</Text>
           </Text>
@@ -280,57 +258,10 @@ export default function YoutubeScreen() {
               <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-4">
                 Supported Formats:
               </Text>
-              <View className="flex-row gap-3 mb-3">
-                {SUPPORTED_FORMAT_CARDS.filter((c) => !c.fullWidth).map(
-                  (card) => (
-                    <View
-                      key={card.title}
-                      className="flex-1 flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
-                    >
-                      <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
-                        <IconSymbol
-                          name={card.icon}
-                          size={20}
-                          color={socialPalette.accent}
-                        />
-                      </View>
-                      <View className="flex-1 min-w-0">
-                        <Text
-                          className="text-xs font-bold text-white"
-                          numberOfLines={1}
-                        >
-                          {card.title}
-                        </Text>
-                        <Text className="text-[10px] text-social-slate-500 mt-0.5">
-                          {card.sub}
-                        </Text>
-                      </View>
-                    </View>
-                  ),
-                )}
-              </View>
-              {SUPPORTED_FORMAT_CARDS.filter((c) => c.fullWidth).map((card) => (
-                <View
-                  key={card.title}
-                  className="flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
-                >
-                  <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
-                    <IconSymbol
-                      name={card.icon}
-                      size={20}
-                      color={socialPalette.accent}
-                    />
-                  </View>
-                  <View className="flex-1 min-w-0">
-                    <Text className="text-xs font-bold text-white">
-                      {card.title}
-                    </Text>
-                    <Text className="text-[10px] text-social-slate-500 mt-0.5">
-                      {card.sub}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+              <SupportedFormatCards
+                cards={SUPPORTED_FORMAT_CARDS}
+                containerClassName="flex-row flex-wrap items-center justify-center gap-3 mb-3"
+              />
             </View>
 
             {!!errorText && (
@@ -391,45 +322,33 @@ export default function YoutubeScreen() {
                         <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-2">
                           Quality
                         </Text>
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          contentContainerStyle={{
-                            flexDirection: "row",
-                            gap: 8,
+
+                        <Pressable
+                          onPress={() => setIsQualitySheetOpen(true)}
+                          className="px-4 py-2 rounded-full border flex-row items-center justify-between"
+                          style={{
+                            borderColor: "rgba(255,255,255,0.15)",
+                            backgroundColor: "rgba(255,255,255,0.05)",
                           }}
                         >
-                          {videoInfo.formatOptions.map((opt, idx) => {
-                            const active = idx === selectedFormatIndex;
+                          {(() => {
+                            const opts = videoInfo.formatOptions;
+                            const activeOpt =
+                              opts.find(
+                                (o) => o.index === selectedFormatIndex,
+                              ) ?? opts[0];
                             return (
-                              <Pressable
-                                key={`${opt.label}-${idx}`}
-                                onPress={() => setSelectedFormatIndex(idx)}
-                                className="px-3 py-2 rounded-full border"
-                                style={
-                                  active
-                                    ? {
-                                        backgroundColor: socialPalette.accent,
-                                        borderColor: socialPalette.accent,
-                                      }
-                                    : {
-                                        borderColor: "rgba(255,255,255,0.15)",
-                                        backgroundColor:
-                                          "rgba(255,255,255,0.05)",
-                                      }
-                                }
-                              >
-                                <Text
-                                  className={`text-[10px] font-black tracking-widest uppercase ${
-                                    active ? "text-white" : "text-slate-400"
-                                  }`}
-                                >
-                                  {opt.label}
-                                </Text>
-                              </Pressable>
+                              <Text className="text-[10px] font-black tracking-widest uppercase text-white">
+                                {activeOpt?.label ?? "Quality"}
+                              </Text>
                             );
-                          })}
-                        </ScrollView>
+                          })()}
+                          <IconSymbol
+                            name="chevron.down"
+                            size={16}
+                            color={socialPalette.slate500}
+                          />
+                        </Pressable>
                       </View>
                     ) : null}
 
@@ -484,6 +403,69 @@ export default function YoutubeScreen() {
                 </View>
               </View>
             )}
+
+            <BottomSheets
+              visible={isQualitySheetOpen}
+              onClose={() => setIsQualitySheetOpen(false)}
+              title="Quality"
+            >
+              <View
+                style={{
+                  height: qualitySheetBodyHeight,
+                  minHeight: 220,
+                  overflow: "hidden",
+                }}
+              >
+                <ScrollView
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                  style={{ flex: 1 }}
+                  contentContainerStyle={{
+                    flexGrow: 1,
+                    paddingBottom: 16,
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: 10,
+                  }}
+                >
+                  {videoInfo?.formatOptions?.map((opt) => {
+                    const active = opt.index === selectedFormatIndex;
+                    return (
+                      <Pressable
+                        key={`${opt.index}-${opt.label}`}
+                        onPress={() => {
+                          setSelectedFormatIndex(opt.index);
+                          setIsQualitySheetOpen(false);
+                        }}
+                        className="px-4 py-3 rounded-2xl border"
+                        style={[
+                          {
+                            width: "48%",
+                          },
+                          active
+                            ? {
+                                backgroundColor: socialPalette.accent,
+                                borderColor: socialPalette.accent,
+                              }
+                            : {
+                                borderColor: "rgba(255,255,255,0.15)",
+                                backgroundColor: "rgba(255,255,255,0.05)",
+                              },
+                        ]}
+                      >
+                        <Text
+                          className={`text-[12px] font-black tracking-widest uppercase ${
+                            active ? "text-white" : "text-slate-300"
+                          }`}
+                        >
+                          {opt.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            </BottomSheets>
           </View>
         </View>
 
@@ -591,7 +573,7 @@ export default function YoutubeScreen() {
           )}
         </View>
 
-        <View className="px-6 mb-24">
+        <View className="px-6">
           <View className="rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
@@ -620,11 +602,11 @@ export default function YoutubeScreen() {
 
             <View className="p-6">
               <Text className="text-lg font-extrabold text-white">
-                VideoMAX Pro
+                Youtube Platform
               </Text>
               <Text className="text-social-slate-500 text-xs mt-1 mb-4 leading-relaxed">
-                Explore our premium downloader for faster multi-thread
-                downloading.
+                Explore our platform for faster and easier downloading of
+                YouTube videos.
               </Text>
 
               <Pressable
@@ -632,7 +614,7 @@ export default function YoutubeScreen() {
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
-                  Explore Now
+                  Open Youtube
                 </Text>
               </Pressable>
             </View>

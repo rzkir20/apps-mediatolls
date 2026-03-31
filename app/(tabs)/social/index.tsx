@@ -6,6 +6,8 @@ import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { DownloadSuccessModal } from "@/components/ui/download-succes";
 
+import { useState } from "react";
+
 import {
   Pressable,
   ScrollView,
@@ -15,7 +17,6 @@ import {
   Linking,
   Share,
 } from "react-native";
-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -26,27 +27,13 @@ import { useTiktokController } from "@/services/tiktok.service";
 
 import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
 
-function historyTypeIconName(
-  type: HistoryItem["type"],
-):
-  | "history.type.video"
-  | "history.type.image"
-  | "history.type.music"
-  | "photo" {
-  switch (type) {
-    case "Video":
-      return "history.type.video";
-    case "Image":
-      return "history.type.image";
-    case "Music":
-      return "history.type.music";
-    default:
-      return "photo";
-  }
-}
+import { SupportedFormatCards } from "@/components/ui/card";
+
+import { historyTypeIconName, FORMAT_BADGES } from "@/components/ui/helper";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const [isConfirmClearOpen, setIsConfirmClearOpen] = useState(false);
 
   const {
     url,
@@ -96,6 +83,11 @@ export default function HomeScreen() {
   const tabBarOffset = 88 + insets.bottom;
   const isPhotoPost = !!metadata?.images?.length;
 
+  const onConfirmClearHistory = () => {
+    if (!history?.length) return;
+    setIsConfirmClearOpen(true);
+  };
+
   const onOpenTikTokApp = async () => {
     const candidates = ["tiktok://"];
     for (const url of candidates) {
@@ -122,6 +114,51 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-social-bg">
+      {isConfirmClearOpen && (
+        <View className="absolute inset-0 z-50 bg-[#05060f]/70 items-center justify-center px-6">
+          <View className="w-full max-w-sm bg-[#0c0d1b] border border-white/10 rounded-[32px] p-6">
+            <View className="flex-row items-center gap-3 mb-4">
+              <View className="w-9 h-9 rounded-2xl bg-red-500/15 items-center justify-center">
+                <IconSymbol name="history.clear" size={20} color="#f97373" />
+              </View>
+              <Text
+                className="text-base font-extrabold text-white"
+                numberOfLines={2}
+              >
+                Hapus semua riwayat?
+              </Text>
+            </View>
+
+            <Text className="text-xs text-social-slate-500 leading-relaxed mb-6">
+              Semua riwayat download TikTok akan dihapus permanen dan tidak bisa
+              dikembalikan.
+            </Text>
+
+            <View className="flex-row gap-3">
+              <Pressable
+                onPress={() => setIsConfirmClearOpen(false)}
+                className="flex-1 py-3 rounded-2xl bg-white/5 border border-white/10 items-center justify-center active:opacity-90"
+              >
+                <Text className="text-[11px] font-black uppercase tracking-widest text-white">
+                  Batal
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => {
+                  setIsConfirmClearOpen(false);
+                  void onClearHistory();
+                }}
+                className="flex-1 py-3 rounded-2xl bg-red-500 items-center justify-center active:opacity-90"
+              >
+                <Text className="text-[11px] font-black uppercase tracking-widest text-white">
+                  Hapus
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -262,42 +299,24 @@ export default function HomeScreen() {
               </Pressable>
             </View>
 
-            <View className="flex-row items-center gap-3">
-              <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500">
-                Supported:
+            <View className="mt-6">
+              <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500 mb-4">
+                Formats:
               </Text>
-              <View className="flex-row flex-wrap gap-2">
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp4"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP4
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.image"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    PNG / JPG
-                  </Text>
-                </View>
-                <View className="px-3 py-1 rounded-full bg-white/5 border border-white/10 flex-row items-center gap-1.5">
-                  <IconSymbol
-                    name="file.mp3"
-                    size={14}
-                    color="rgba(255,255,255,0.8)"
-                  />
-                  <Text className="text-[10px] font-extrabold tracking-widest uppercase text-white">
-                    MP3
-                  </Text>
-                </View>
-              </View>
+              <SupportedFormatCards
+                cards={FORMAT_BADGES.map(({ label, icon }) => ({
+                  title: label,
+                  sub:
+                    label === "MP4"
+                      ? "Video TikTok berkualitas tinggi"
+                      : label === "MP3"
+                        ? "Ekstraksi audio dari video TikTok"
+                        : "Gambar berkualitas untuk disimpan",
+                  icon,
+                  fullWidth: false,
+                }))}
+                containerClassName="flex-row flex-wrap items-center justify-center gap-3 mb-3"
+              />
             </View>
 
             {!!errorText && (
@@ -488,7 +507,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={onClearHistory}
+              onPress={onConfirmClearHistory}
               disabled={!history?.length}
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}

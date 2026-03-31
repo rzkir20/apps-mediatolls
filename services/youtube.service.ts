@@ -96,7 +96,10 @@ async function loadHistory(): Promise<HistoryItem[]> {
 }
 
 async function persistHistory(items: HistoryItem[]) {
-  await AsyncStorage.setItem(STORAGE_KEY_YOUTUBE_HISTORY, JSON.stringify(items));
+  await AsyncStorage.setItem(
+    STORAGE_KEY_YOUTUBE_HISTORY,
+    JSON.stringify(items),
+  );
 }
 
 function formatBytes(n: number) {
@@ -120,6 +123,11 @@ function parseQuality(label: string | null): number {
   return m?.[1] != null ? parseInt(m[1], 10) : 0;
 }
 
+function getItag(format: YoutubeFormatItem): number {
+  const raw = (format as { itag?: number }).itag;
+  return Number.isFinite(raw) ? Number(raw) : 0;
+}
+
 function buildVideoInfo(
   data: YoutubeMetadataResponse,
   baseUrl: string,
@@ -130,21 +138,23 @@ function buildVideoInfo(
   const hasAudio = formats.some((f) => f.isAudioOnly);
 
   const videoFormats = formats
-    .filter((f) => !f.isAudioOnly && f.qualityLabel)
+    .filter((f) => !f.isAudioOnly)
     .sort(
       (a, b) =>
-        parseQuality(b.qualityLabel ?? null) - parseQuality(a.qualityLabel ?? null),
+        parseQuality(b.qualityLabel ?? null) -
+          parseQuality(a.qualityLabel ?? null) ||
+        getItag(b) - getItag(a),
     );
 
-  const seenLabels = new Set<string>();
+  const seenItags = new Set<number>();
   const formatOptions: { index: number; label: string }[] = [];
-  videoFormats.forEach((f, i) => {
-    const label = f.qualityLabel ?? `${i + 1}`;
-    const key = label.toUpperCase();
-    if (seenLabels.has(key)) return;
-    seenLabels.add(key);
-    formatOptions.push({ index: i, label });
-  });
+  for (const f of videoFormats) {
+    const itag = getItag(f);
+    if (seenItags.has(itag)) continue;
+    seenItags.add(itag);
+    const label = f.qualityLabel ?? `Itag ${itag}`;
+    formatOptions.push({ index: itag, label });
+  }
 
   const trimmedUrl = url.trim();
   const previewVideoUrl = hasVideo
@@ -177,14 +187,15 @@ export function useYoutubeController() {
   const qc = useQueryClient();
 
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const downloadRef =
-    useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(null);
+  const downloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const downloadedFileUrisRef = useRef<string[]>([]);
   const downloadKindRef = useRef<DownloadKind>("video");
   const historyHydratedRef = useRef(false);
-  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
-    null,
-  );
+  const previewDownloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const previewRequestIdRef = useRef(0);
   const previewCacheRef = useRef<Record<string, string>>({});
   const progressRef = useRef<{
@@ -357,15 +368,23 @@ export function useYoutubeController() {
     return buildVideoInfo(metadata, baseUrl, url);
   }, [metadata, baseUrl, url]);
 
+  useEffect(() => {
+    const opts = videoInfo?.formatOptions;
+    if (opts?.length && opts[0]) {
+      setSelectedFormatIndex(opts[0].index);
+    }
+  }, [videoInfo?.formatOptions, setSelectedFormatIndex]);
+
   const effectivePreviewVideoUrl = useMemo(() => {
     const info = videoInfo;
     if (!info?.previewVideoUrl) return null;
     const opts = info.formatOptions;
-    const idx = selectedFormatIndex;
     if (opts?.length) {
-      const safeIdx = Math.min(Math.max(0, idx), opts.length - 1);
-      const backendIndex = opts[safeIdx]?.index ?? safeIdx;
-      return `${info.previewVideoUrl}&quality=${backendIndex}`;
+      const selectedItag =
+        opts.find((o) => o.index === selectedFormatIndex)?.index ??
+        opts[0]?.index;
+      if (selectedItag == null) return info.previewVideoUrl;
+      return `${info.previewVideoUrl}&quality=${encodeURIComponent(String(selectedItag))}`;
     }
     return info.previewVideoUrl;
   }, [videoInfo, selectedFormatIndex]);
@@ -407,12 +426,14 @@ export function useYoutubeController() {
     }
 
     const opts = info.formatOptions;
-    const idx = selectedFormatIndex;
     let u = info.previewVideoUrl;
     if (opts?.length) {
-      const safeIdx = Math.min(Math.max(0, idx), opts.length - 1);
-      const backendIndex = opts[safeIdx]?.index ?? safeIdx;
-      u = `${info.previewVideoUrl}&quality=${backendIndex}`;
+      const selectedItag =
+        opts.find((o) => o.index === selectedFormatIndex)?.index ??
+        opts[0]?.index;
+      if (selectedItag != null) {
+        u = `${info.previewVideoUrl}&quality=${encodeURIComponent(String(selectedItag))}`;
+      }
     }
 
     const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
@@ -511,7 +532,8 @@ export function useYoutubeController() {
         saveText: getErrorMessage(e, "Gagal memuat preview video"),
       });
     } finally {
-      if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
+      if (previewRequestIdRef.current === requestId)
+        previewDownloadRef.current = null;
     }
   }, [url, baseUrl, videoInfo, selectedFormatIndex, qc, setUi]);
 
@@ -519,7 +541,11 @@ export function useYoutubeController() {
     previewRequestIdRef.current += 1;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ isPreviewOpen: false, previewLoadPercent: 0, previewLoadText: null });
+    setUi({
+      isPreviewOpen: false,
+      previewLoadPercent: 0,
+      previewLoadText: null,
+    });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -547,7 +573,8 @@ export function useYoutubeController() {
       const { downloadUrl, ext } = args;
       if (!downloadUrl) throw new Error("URL download tidak tersedia");
 
-      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const cacheDir =
+        FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
       const fileNameSafe = `youtube-${Date.now()}.${ext}`;
@@ -570,7 +597,9 @@ export function useYoutubeController() {
             const dt = Math.max(0.25, (now - prev.lastTs) / 1000);
             const db = Math.max(0, written - prev.lastBytes);
             const inst = db / dt;
-            prev.speedBps = prev.speedBps ? prev.speedBps * 0.7 + inst * 0.3 : inst;
+            prev.speedBps = prev.speedBps
+              ? prev.speedBps * 0.7 + inst * 0.3
+              : inst;
             prev.lastTs = now;
             prev.lastBytes = written;
           }
@@ -579,10 +608,21 @@ export function useYoutubeController() {
           const spd = progressRef.current?.speedBps ?? 0;
           const remainingSec =
             spd > 0 && expected > 0 ? (expected - written) / spd : NaN;
+          const stageText =
+            pct < 15
+              ? "Preparing Stream"
+              : pct < 70
+                ? "Saving Media Data"
+                : pct < 85
+                  ? "Optimizing Video"
+                  : pct < 100
+                    ? "Verifying Assets"
+                    : "Done";
 
           setUi({
             downloadPercent: Math.max(0, Math.min(100, pct)),
             downloadPillText: "Downloading",
+            downloadSubText: stageText,
             downloadSpeedText: spd > 0 ? `${formatBytes(spd)}/s` : null,
             downloadRemainingText: Number.isFinite(remainingSec)
               ? formatSeconds(remainingSec)
@@ -648,18 +688,22 @@ export function useYoutubeController() {
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
 
-      const album = await MediaLibrary.createAlbumAsync(albumName, first, false).catch(
-        async () => {
-          const found = await MediaLibrary.getAlbumAsync(albumName);
-          if (!found) throw new Error("Gagal membuat album");
-          return found;
-        },
-      );
+      const album = await MediaLibrary.createAlbumAsync(
+        albumName,
+        first,
+        false,
+      ).catch(async () => {
+        const found = await MediaLibrary.getAlbumAsync(albumName);
+        if (!found) throw new Error("Gagal membuat album");
+        return found;
+      });
 
       if (assets.length > 1) {
-        await MediaLibrary.addAssetsToAlbumAsync(assets.slice(1), album, false).catch(
-          () => {},
-        );
+        await MediaLibrary.addAssetsToAlbumAsync(
+          assets.slice(1),
+          album,
+          false,
+        ).catch(() => {});
       }
 
       return assets;
@@ -715,13 +759,12 @@ export function useYoutubeController() {
     try {
       const trimmed = url.trim();
       const opts = info.formatOptions;
-      const uiIndex = Math.min(
-        Math.max(0, selectedFormatIndex),
-        opts?.length ? opts.length - 1 : 0,
-      );
-      const qualityIndex = opts?.[uiIndex]?.index ?? uiIndex;
+      const qualityItag =
+        opts?.find((o) => o.index === selectedFormatIndex)?.index ??
+        opts?.[0]?.index ??
+        0;
       const params = new URLSearchParams({ url: trimmed });
-      params.set("quality", String(qualityIndex));
+      params.set("quality", String(qualityItag));
       const downloadUrl = `${baseUrl}/api/${PLATFORM}/download?${params.toString()}`;
       await downloadSingleMutation.mutateAsync({
         downloadUrl,
@@ -752,7 +795,10 @@ export function useYoutubeController() {
     const info = videoInfo;
     const title = metadata?.title?.trim();
     const baseName = info?.id ? `youtube_${info.id}` : "youtube_audio";
-    startDownloadUi({ fileName: title ? `${title} (MP3)` : baseName, kind: "audio" });
+    startDownloadUi({
+      fileName: title ? `${title} (MP3)` : baseName,
+      kind: "audio",
+    });
 
     if (!url.trim() || !baseUrl || isSaving || !info) return;
     if (!info.audioUrl) {
@@ -777,7 +823,16 @@ export function useYoutubeController() {
       });
       throw e;
     }
-  }, [metadata, videoInfo, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+  }, [
+    metadata,
+    videoInfo,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadSingleMutation,
+    setUi,
+  ]);
 
   const onTogglePauseOrSave = useCallback(async () => {
     if (downloadPercent >= 100 && isDownloadReadyToSave) {
@@ -799,7 +854,11 @@ export function useYoutubeController() {
     }
 
     await t.pauseAsync();
-    setUi({ isDownloadPaused: true, downloadPillText: "Paused", downloadSubText: null });
+    setUi({
+      isDownloadPaused: true,
+      downloadPillText: "Paused",
+      downloadSubText: null,
+    });
   }, [
     downloadPercent,
     isDownloadReadyToSave,

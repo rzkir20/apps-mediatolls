@@ -29,31 +29,9 @@ import { socialPalette } from "@/lib/pallate";
 
 import { useInstagramController } from "@/services/instagram.service";
 
-function historyTypeIconName(
-  type: HistoryItem["type"],
-):
-  | "history.type.video"
-  | "history.type.image"
-  | "history.type.music"
-  | "photo" {
-  switch (type) {
-    case "Video":
-      return "history.type.video";
-    case "Image":
-      return "history.type.image";
-    case "Music":
-      return "history.type.music";
-    default:
-      return "photo";
-  }
-}
+import { SupportedFormatCards } from "@/components/ui/card";
 
-const FORMAT_BADGES = [
-  { label: "JPG", icon: "format.jpg" as const },
-  { label: "PNG", icon: "format.png" as const },
-  { label: "MP4", icon: "format.mp4" as const },
-  { label: "GIF", icon: "format.gif" as const },
-] as const;
+import { historyTypeIconName, FORMAT_BADGES } from "@/components/ui/helper";
 
 export default function InstagramScreen() {
   const insets = useSafeAreaInsets();
@@ -171,7 +149,9 @@ export default function InstagramScreen() {
         sizeText={downloadTotalText ?? undefined}
         speedText={downloadSpeedText ?? undefined}
         durationText={downloadRemainingText ?? "00:00"}
-        formatText={downloadFileName.toLowerCase().includes("photo") ? "JPG/PNG" : "MP4"}
+        formatText={
+          downloadFileName.toLowerCase().includes("photo") ? "JPG/PNG" : "MP4"
+        }
         primaryActionLabel="Tutup"
         secondaryActionLabel="Bagikan"
         onPrimaryAction={closeDownloadSuccessModal}
@@ -272,27 +252,24 @@ export default function InstagramScreen() {
               </Pressable>
             </View>
 
-            <View className="mt-4 flex-row items-center gap-4">
-              <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500">
+            <View className="mt-6">
+              <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500 mb-4">
                 Formats:
               </Text>
-              <View className="flex-row flex-wrap gap-3">
-                {FORMAT_BADGES.map(({ label, icon }) => (
-                  <View
-                    key={label}
-                    className="flex-row items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-lg"
-                  >
-                    <IconSymbol
-                      name={icon}
-                      size={14}
-                      color="rgba(255,255,255,0.8)"
-                    />
-                    <Text className="text-[10px] font-bold text-slate-400">
-                      {label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+              <SupportedFormatCards
+                cards={FORMAT_BADGES.map(({ label, icon }) => ({
+                  title: label,
+                  sub:
+                    label === "MP4"
+                      ? "Video Instagram berkualitas tinggi"
+                      : label === "MP3"
+                        ? "Ekstraksi audio dari Reels/Video"
+                        : "Gambar berkualitas untuk disimpan",
+                  icon,
+                  fullWidth: false,
+                }))}
+                containerClassName="flex-row flex-wrap items-center justify-center gap-3 mb-3"
+              />
             </View>
 
             {!!errorText && (
@@ -554,7 +531,7 @@ export default function InstagramScreen() {
           )}
         </View>
 
-        <View className="px-6 mb-24">
+        <View className="px-6">
           <View className="rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
@@ -583,11 +560,11 @@ export default function InstagramScreen() {
 
             <View className="p-6">
               <Text className="text-lg font-extrabold text-white">
-                VideoMAX Pro
+                Instagram Platform
               </Text>
               <Text className="text-social-slate-500 text-xs mt-1 mb-4 leading-relaxed">
-                Explore our premium downloader for faster multi-thread
-                downloading.
+                Explore our platform for faster and easier downloading of
+                Instagram photos and videos.
               </Text>
 
               <Pressable
@@ -595,7 +572,7 @@ export default function InstagramScreen() {
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
-                  Explore Now
+                  Open Instagram
                 </Text>
               </Pressable>
             </View>

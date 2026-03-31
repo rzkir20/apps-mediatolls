@@ -1,4 +1,5 @@
 type YoutubeFormatItem = {
+  itag?: number;
   qualityLabel?: string | null;
   isAudioOnly?: boolean;
 };

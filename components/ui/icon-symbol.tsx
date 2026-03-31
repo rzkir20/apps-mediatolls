@@ -56,6 +56,8 @@ const MAPPING = {
   layers: "layers",
   "doc.text": "description",
   "heart.fill": "favorite",
+  quality: "high-quality",
+  video: "movie",
   history: "history",
   "history.clear": "delete-outline",
   "history.type.video": "videocam",

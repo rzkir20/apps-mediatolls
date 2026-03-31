@@ -26,32 +26,12 @@ import { socialPalette } from "@/lib/pallate";
 
 import { useFacebookController } from "@/services/facebook.service";
 
-function historyTypeIconName(
-  type: HistoryItem["type"],
-):
-  | "history.type.video"
-  | "history.type.image"
-  | "history.type.music"
-  | "photo" {
-  switch (type) {
-    case "Video":
-      return "history.type.video";
-    case "Image":
-      return "history.type.image";
-    case "Music":
-      return "history.type.music";
-    default:
-      return "photo";
-  }
-}
+import {
+  historyTypeIconName,
+  FORMAT_BADGES_FACEBOOK,
+} from "@/components/ui/helper";
 
 const FB_BLUE = "#1877F2";
-
-const FORMAT_BADGES = [
-  { label: "MP4", icon: "file.mp4" as const, tint: socialPalette.accent },
-  { label: "MOV", icon: "video" as const, tint: FB_BLUE },
-  { label: "MP3", icon: "file.mp3" as const, tint: "#fb923c" },
-] as const;
 
 export default function FacebookScreen() {
   const insets = useSafeAreaInsets();
@@ -182,34 +162,6 @@ export default function FacebookScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Brand glows */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: -120,
-            right: -120,
-            width: 260,
-            height: 260,
-            backgroundColor: "rgba(255,61,87,0.10)",
-            borderRadius: 999,
-            opacity: 1,
-          }}
-        />
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 320,
-            left: -140,
-            width: 320,
-            height: 320,
-            backgroundColor: "rgba(24,119,242,0.06)",
-            borderRadius: 999,
-            opacity: 1,
-          }}
-        />
-
         {/* Hero */}
         <View className="mt-6 px-6 mb-10">
           <View className="flex-row items-center gap-3 mb-4">
@@ -224,7 +176,7 @@ export default function FacebookScreen() {
               className="font-black text-[10px] tracking-[0.3em] uppercase"
               style={{ color: socialPalette.accent }}
             >
-              Facebook Premium
+              Facebook Platform
             </Text>
           </View>
 
@@ -304,7 +256,7 @@ export default function FacebookScreen() {
               Available Formats
             </Text>
             <View className="flex-row gap-3">
-              {FORMAT_BADGES.map((b) => (
+              {FORMAT_BADGES_FACEBOOK.map((b) => (
                 <View
                   key={b.label}
                   className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/5 flex-row items-center justify-center gap-2"
@@ -517,7 +469,7 @@ export default function FacebookScreen() {
         </View>
 
         {/* Promo */}
-        <View className="px-6 mb-24">
+        <View className="px-6">
           <View className="rounded-[40px] border border-white/10 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
@@ -563,11 +515,11 @@ export default function FacebookScreen() {
               </View>
 
               <Text className="text-2xl font-extrabold text-white mb-2">
-                VideoMAX Pro
+                Facebook Platform
               </Text>
               <Text className="text-social-slate-500 text-xs mb-6 leading-relaxed max-w-[220px]">
-                Unlock lightning fast downloads for private Facebook groups and
-                high-res reels.
+                Explore our platform for faster and easier downloading of
+                Facebook videos.
               </Text>
 
               <Pressable
@@ -575,7 +527,7 @@ export default function FacebookScreen() {
                 className="self-start px-8 py-4 rounded-2xl bg-white active:opacity-90"
               >
                 <Text className="text-black font-black text-[10px] tracking-[0.2em] uppercase">
-                  Explore Now
+                  Open Facebook
                 </Text>
               </Pressable>
             </View>

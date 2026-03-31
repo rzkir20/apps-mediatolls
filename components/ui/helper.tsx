@@ -10,6 +10,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 
 const ACCENT = socialPalette.accent;
 
+const FB_BLUE = "#1877F2";
+
 //================================ Permission Settings =================================//
 
 export function StatusPill({ granted }: { granted: boolean }) {
@@ -228,3 +230,64 @@ export function isPlatformActive(
   if (id === "tiktok") return !onInstagram && !onFacebook && !onYoutube;
   return false;
 }
+
+//================================ History Type Icon Name & Supported Format Cards For Social Platforms =================================//
+export function historyTypeIconName(
+  type: HistoryItem["type"],
+):
+  | "history.type.video"
+  | "history.type.image"
+  | "history.type.music"
+  | "photo" {
+  switch (type) {
+    case "Video":
+      return "history.type.video";
+    case "Image":
+      return "history.type.image";
+    case "Music":
+      return "history.type.music";
+    default:
+      return "photo";
+  }
+}
+
+export const SUPPORTED_FORMAT_CARDS = [
+  {
+    title: "mp4",
+    sub: "Video MP4 (kualitas default)",
+    icon: "video" as const,
+    fullWidth: false,
+  },
+  {
+    title: "shorts",
+    sub: "Short-form Video",
+    icon: "play.tv" as const,
+    fullWidth: false,
+  },
+  {
+    title: "mp3",
+    sub: "Audio Only (ekstraksi berkualitas)",
+    icon: "music.note" as const,
+    fullWidth: true,
+  },
+  {
+    title: "Quality",
+    sub: "MP4 dengan pilihan kualitas",
+    icon: "quality" as const,
+    fullWidth: false,
+  },
+];
+
+export const FORMAT_BADGES = [
+  { label: "JPG", icon: "format.jpg" as const },
+  { label: "PNG", icon: "format.png" as const },
+  { label: "MP4", icon: "format.mp4" as const },
+  { label: "GIF", icon: "format.gif" as const },
+  { label: "MP3", icon: "file.mp3" as const },
+] as const;
+
+export const FORMAT_BADGES_FACEBOOK = [
+  { label: "MP4", icon: "file.mp4" as const, tint: socialPalette.accent },
+  { label: "MOV", icon: "video" as const, tint: FB_BLUE },
+  { label: "MP3", icon: "file.mp3" as const, tint: "#fb923c" },
+] as const;
