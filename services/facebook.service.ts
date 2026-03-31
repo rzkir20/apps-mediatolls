@@ -14,6 +14,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAppConfig, withApiSecret } from "@/lib/config";
 
+import { getPlatformAlbumName } from "@/components/ui/helper";
+
 import { getErrorMessage } from "@/components/logs";
 
 const uiKey = ["facebook", "ui"] as const;
@@ -601,7 +603,7 @@ export function useFacebookController() {
         assets.push(await MediaLibrary.createAssetAsync(uri));
       }
 
-      const albumName = "Media Tools";
+      const albumName = getPlatformAlbumName(PLATFORM);
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
 

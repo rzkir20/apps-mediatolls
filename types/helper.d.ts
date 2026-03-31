@@ -296,13 +296,38 @@ type FacebookUiState = {
 
 type DownloadKind = "video" | "audio" | "photos";
 
+//======================= Document Converter Types =======================//
+type UploadFile =
+  | File
+  | {
+      uri: string;
+      name: string;
+      type?: string;
+      size?: number | null;
+    };
+
+type ConvertResult =
+  | { kind: "web"; blob: Blob; filename: string }
+  | { kind: "native"; uri: string; filename: string };
+
+type ErrorShape = { message?: string; error?: string };
+
+type ConvertDocUiState = {
+  file: UploadFile | null;
+  targetFormat: TargetFormat;
+  downloadError: string | null;
+};
+
+type PdfConvertUiState = {
+  file: UploadFile | null;
+  downloadError: string | null;
+};
+
 //======================= Social Header Types =======================//
 type SocialHeaderProps = {
   title?: string;
   onPressSystem?: () => void;
 };
-
-type ErrorShape = { message?: string; error?: string };
 
 //======================= Supported Format Cards Types =======================//
 type SupportedFormatCard = {

@@ -4,7 +4,7 @@ import { useVideoPlayer, VideoView } from "expo-video";
 
 import { socialPalette } from "@/lib/pallate";
 
-import { Linking, Pressable, Text, View } from "react-native";
+import { Linking, Platform, Pressable, Text, View } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
@@ -291,3 +291,12 @@ export const FORMAT_BADGES_FACEBOOK = [
   { label: "MOV", icon: "video" as const, tint: FB_BLUE },
   { label: "MP3", icon: "file.mp3" as const, tint: "#fb923c" },
 ] as const;
+
+//================================ Folders Name For Social Platforms =================================//
+export function getPlatformAlbumName(
+  platformKey: "facebook" | "youtube" | "tiktok" | "instagram" | "documents",
+) {
+  const base = "Media Tools";
+  if (Platform.OS === "android") return `${base}/${platformKey}`;
+  return `${base} (${platformKey})`;
+}

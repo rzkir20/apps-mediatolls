@@ -25,11 +25,17 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { socialPalette } from "@/lib/pallate";
 
+import {
+  useStateConvertDoc,
+  useStatePdfToExcel,
+  useStatePdfToPpt,
+} from "@/services/documents.service";
+
 const OUTPUT_FORMATS = [
   "Adobe PDF (.pdf)",
   "Microsoft Word (.docx)",
-  "Plain Text (.txt)",
-  "Image (.png)",
+  "Microsoft Excel (.xlsx)",
+  "Microsoft PowerPoint (.pptx)",
 ] as const;
 
 const QUALITY_LABELS = ["LOW", "MEDIUM", "Ultra High"] as const;
@@ -104,6 +110,27 @@ export default function FilesScreen() {
   const [recentItems, setRecentItems] = useState([...MOCK_RECENT]);
   const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
 
+  const {
+    file,
+    targetFormat,
+    setTargetFormat,
+    onFileChange,
+    onConvert,
+    converting,
+  } = useStateConvertDoc();
+
+  const excel = useStatePdfToExcel();
+  const ppt = useStatePdfToPpt();
+
+  const convertingAny = converting || excel.converting || ppt.converting;
+
+  const selectedOutputKey = useMemo(() => {
+    if (formatIndex === 0) return "pdf";
+    if (formatIndex === 1) return "docx";
+    if (formatIndex === 2) return "xlsx";
+    return "pptx";
+  }, [formatIndex]);
+
   const qualityLabel = useMemo(() => {
     if (quality === 3) return "High";
     if (quality === 2) return "Medium";
@@ -124,8 +151,33 @@ export default function FilesScreen() {
   const pickDocument = useCallback(async () => {
     haptic();
     try {
+      if (Platform.OS === "web" && typeof document !== "undefined") {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept =
+          selectedOutputKey === "xlsx" || selectedOutputKey === "pptx"
+            ? "application/pdf,.pdf"
+            : "*/*";
+        input.onchange = () => {
+          const f = input.files?.[0] ?? null;
+          onFileChange(f);
+          excel.onFileChange(selectedOutputKey === "xlsx" ? f : null);
+          ppt.onFileChange(selectedOutputKey === "pptx" ? f : null);
+          setPickedFile(
+            f
+              ? { name: f.name, uri: "", size: f.size ?? null, mimeType: f.type }
+              : null,
+          );
+        };
+        input.click();
+        return;
+      }
+
       const result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
+        type:
+          selectedOutputKey === "xlsx" || selectedOutputKey === "pptx"
+            ? "application/pdf"
+            : "*/*",
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -137,11 +189,35 @@ export default function FilesScreen() {
         size: asset.size ?? null,
         mimeType: asset.mimeType,
       });
+      const upload = {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType ?? "application/octet-stream",
+        size: asset.size ?? null,
+      };
+      onFileChange(upload);
+      excel.onFileChange(selectedOutputKey === "xlsx" ? upload : null);
+      ppt.onFileChange(selectedOutputKey === "pptx" ? upload : null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       Alert.alert("Tidak bisa membuka file", msg);
     }
-  }, [haptic]);
+  }, [haptic, onFileChange, excel, ppt, selectedOutputKey]);
+
+  const onConvertNow = useCallback(() => {
+    if (selectedOutputKey === "pdf" || selectedOutputKey === "docx") {
+      setTargetFormat(selectedOutputKey);
+      onConvert();
+      return;
+    }
+
+    if (selectedOutputKey === "xlsx") {
+      excel.onConvert();
+      return;
+    }
+
+    ppt.onConvert();
+  }, [excel, onConvert, ppt, selectedOutputKey, setTargetFormat]);
 
   return (
     <View className="flex-1 bg-social-bg">
@@ -333,6 +409,51 @@ export default function FilesScreen() {
                 ))}
               </View>
             </View>
+
+            <Pressable
+              onPress={() => {
+                haptic();
+                onConvertNow();
+              }}
+              disabled={
+                convertingAny ||
+                (selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+                  ? !file
+                  : selectedOutputKey === "xlsx"
+                    ? !excel.file
+                    : !ppt.file)
+              }
+              className="mt-6 w-full rounded-2xl overflow-hidden"
+              style={{
+                opacity:
+                  convertingAny ||
+                  (selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+                    ? !file
+                    : selectedOutputKey === "xlsx"
+                      ? !excel.file
+                      : !ppt.file)
+                    ? 0.6
+                    : 1,
+              }}
+            >
+              <View className="py-4 bg-social-accent items-center justify-center">
+                <Text className="text-white text-xs font-black uppercase tracking-widest">
+                  {convertingAny
+                    ? "Converting..."
+                    : selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+                      ? file
+                        ? `Convert sekarang (${targetFormat.toUpperCase()})`
+                        : "Pilih file dulu"
+                      : selectedOutputKey === "xlsx"
+                        ? excel.file
+                          ? "Convert sekarang (XLSX)"
+                          : "Pilih PDF dulu"
+                        : ppt.file
+                          ? "Convert sekarang (PPTX)"
+                          : "Pilih PDF dulu"}
+                </Text>
+              </View>
+            </Pressable>
           </View>
         </View>
 
@@ -412,6 +533,8 @@ export default function FilesScreen() {
               onPress={() => {
                 haptic();
                 setFormatIndex(i);
+                if (i === 0) setTargetFormat("pdf");
+                else if (i === 1) setTargetFormat("docx");
                 setFormatModalOpen(false);
               }}
               className="py-4 border-b border-white/10 active:bg-white/5"

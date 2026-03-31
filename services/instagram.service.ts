@@ -16,10 +16,17 @@ import { useAppConfig } from "@/lib/config";
 
 import { getErrorMessage } from "@/components/logs";
 
+import { getPlatformAlbumName } from "@/components/ui/helper";
+
 const uiKey = ["instagram", "ui"] as const;
+
 const historyKey = ["instagram", "history"] as const;
+
 const STORAGE_KEY_INSTAGRAM_HISTORY = "instagram:history:v1";
+
 const HISTORY_LIMIT = 30;
+
+export const PLATFORM = "instagram";
 
 function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
   const key = encodeURIComponent(requestUrl).replace(/%/g, "").slice(0, 120);
@@ -687,7 +694,7 @@ export function useInstagramController() {
         assets.push(await MediaLibrary.createAssetAsync(uri));
       }
 
-      const albumName = "Media Tools";
+      const albumName = getPlatformAlbumName(PLATFORM);
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
 
