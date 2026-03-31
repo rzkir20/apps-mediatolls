@@ -158,6 +158,36 @@ type DialogInstagramProps = {
   onDownloadPhotos: () => void;
 };
 
+//======================= Instagram Types =======================//
+type InstagramUiState = {
+  url: string;
+
+  isPreviewOpen: boolean;
+  previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
+  saveText: string | null;
+
+  coverWidth: number;
+  coverPhotoIndex: number;
+
+  isConfirmClearOpen: boolean;
+
+  isDownloadOpen: boolean;
+  downloadPercent: number;
+  downloadPillText: string | null;
+  downloadSubText: string | null;
+  downloadFileName: string;
+
+  downloadSpeedText: string | null;
+  downloadRemainingText: string | null;
+  downloadTotalText: string | null;
+
+  isDownloadPaused: boolean;
+  isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
+};
+
 //======================= Youtube Dialog Types =======================//
 type DialogYoutubeProps = {
   isOpen: boolean;
@@ -172,6 +202,36 @@ type DialogYoutubeProps = {
 
   onDownloadVideoMp4: () => void;
   onDownloadAudioMp3: () => void;
+};
+
+//======================= Youtube Types =======================//
+type YoutubeUiState = {
+  url: string;
+
+  isPreviewOpen: boolean;
+  previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
+  saveText: string | null;
+
+  isQualitySheetOpen: boolean;
+  isConfirmClearOpen: boolean;
+
+  selectedFormatIndex: number;
+
+  isDownloadOpen: boolean;
+  downloadPercent: number;
+  downloadPillText: string | null;
+  downloadSubText: string | null;
+  downloadFileName: string;
+
+  downloadSpeedText: string | null;
+  downloadRemainingText: string | null;
+  downloadTotalText: string | null;
+
+  isDownloadPaused: boolean;
+  isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
 };
 
 //======================= Facebook Dialog Types =======================//
@@ -198,6 +258,8 @@ type FacebookUiState = {
   previewLoadText: string | null;
   saveText: string | null;
 
+  isConfirmClearOpen: boolean;
+
   isDownloadOpen: boolean;
   downloadPercent: number;
   downloadPillText: string | null;
@@ -212,6 +274,8 @@ type FacebookUiState = {
   isDownloadReadyToSave: boolean;
   isDownloadSuccessOpen: boolean;
 };
+
+type DownloadKind = "video" | "audio" | "photos";
 
 //======================= Social Header Types =======================//
 type SocialHeaderProps = {
@@ -235,4 +299,18 @@ type SupportedFormatCardsProps = {
   containerClassName?: string;
   cardClassName?: string;
   iconBgClassName?: string;
+};
+
+//======================= Delete Confirm Modal Types =======================//
+type DeleteConfirmModalProps = {
+  visible: boolean;
+  title: string;
+  description: string;
+  cancelLabel?: string;
+  confirmLabel?: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  iconName?: string;
+  iconColor?: string;
+  children?: ReactNode;
 };

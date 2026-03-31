@@ -6,19 +6,13 @@ import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { DownloadSuccessModal } from "@/components/ui/download-succes";
 
-import {
-  Linking,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
+
+import { DeleteConfirmModal } from "@/components/ui/delete";
 
 import { DialogFacebook } from "@/components/social/facebook/DialogFacebook";
 
@@ -62,7 +56,10 @@ export default function FacebookScreen() {
     isDownloadPaused,
     isDownloadReadyToSave,
     isDownloadSuccessOpen,
-    onClearHistory,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
@@ -71,39 +68,27 @@ export default function FacebookScreen() {
     onPreview,
     onDownloadVideoMp4,
     onTogglePauseOrSave,
+    onOpenFacebookApp,
+    onShareDownloaded,
   } = useFacebookController();
 
   const tabBarOffset = 88 + insets.bottom;
 
-  const onOpenFacebookApp = async () => {
-    const candidates = ["fb://", "facebook://", "fb://feed"];
-    for (const u of candidates) {
-      try {
-        const supported = await Linking.canOpenURL(u);
-        if (supported) {
-          await Linking.openURL(u);
-          return;
-        }
-      } catch {
-        /* continue */
-      }
-    }
-    await Linking.openURL("https://www.facebook.com/");
-  };
-
-  const onShareDownloaded = async () => {
-    const shareText =
-      saveText?.trim() ||
-      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
-    try {
-      await Share.share({ message: shareText });
-    } catch {
-      // noop
-    }
-  };
-
   return (
     <View className="flex-1 bg-social-bg">
+      <DeleteConfirmModal
+        visible={isConfirmClearOpen}
+        title="Hapus semua riwayat?"
+        description="Semua riwayat download Facebook akan dihapus permanen dan tidak bisa dikembalikan."
+        cancelLabel="Batal"
+        confirmLabel="Hapus"
+        iconName="history.clear"
+        iconColor="#f97373"
+        onCancel={closeConfirmClearHistory}
+        onConfirm={() => {
+          void onConfirmClearHistory();
+        }}
+      />
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -374,7 +359,7 @@ export default function FacebookScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={onClearHistory}
+              onPress={openConfirmClearHistory}
               disabled={!history?.length}
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { Linking, Share } from "react-native";
+
 import * as Clipboard from "expo-clipboard";
 
 import * as FileSystem from "expo-file-system/legacy";
@@ -38,6 +40,8 @@ function getDefaultUiState(): FacebookUiState {
     previewLoadPercent: 0,
     previewLoadText: null,
     saveText: null,
+
+    isConfirmClearOpen: false,
 
     isDownloadOpen: false,
     downloadPercent: 0,
@@ -134,9 +138,9 @@ export function useFacebookController() {
   > | null>(null);
   const downloadedFileUrisRef = useRef<string[]>([]);
   const historyHydratedRef = useRef(false);
-  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
-    null,
-  );
+  const previewDownloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const previewRequestIdRef = useRef(0);
   const previewCacheRef = useRef<Record<string, string>>({});
   const progressRef = useRef<{
@@ -167,6 +171,8 @@ export function useFacebookController() {
   const previewLoadPercent = ui.data.previewLoadPercent;
   const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
+
+  const isConfirmClearOpen = ui.data.isConfirmClearOpen;
 
   const isDownloadOpen = ui.data.isDownloadOpen;
   const downloadPercent = ui.data.downloadPercent;
@@ -242,6 +248,23 @@ export function useFacebookController() {
     await AsyncStorage.removeItem(STORAGE_KEY_FACEBOOK_HISTORY);
   }, [qc]);
 
+  const historyItems = history.data ?? [];
+  const historyLength = historyItems.length;
+
+  const openConfirmClearHistory = useCallback(() => {
+    if (!historyLength) return;
+    setUi({ isConfirmClearOpen: true });
+  }, [historyLength, setUi]);
+
+  const closeConfirmClearHistory = useCallback(() => {
+    setUi({ isConfirmClearOpen: false });
+  }, [setUi]);
+
+  const onConfirmClearHistory = useCallback(async () => {
+    closeConfirmClearHistory();
+    await onClearHistory();
+  }, [closeConfirmClearHistory, onClearHistory]);
+
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
   const metadataQuery = useQuery({
@@ -283,6 +306,33 @@ export function useFacebookController() {
     const text = await Clipboard.getStringAsync();
     if (text) setUi({ url: text.trim() });
   }, [setUi]);
+
+  const onOpenFacebookApp = useCallback(async () => {
+    const candidates = ["fb://", "facebook://", "fb://feed"];
+    for (const u of candidates) {
+      try {
+        const supported = await Linking.canOpenURL(u);
+        if (supported) {
+          await Linking.openURL(u);
+          return;
+        }
+      } catch {
+        /* continue */
+      }
+    }
+    await Linking.openURL("https://www.facebook.com/");
+  }, []);
+
+  const onShareDownloaded = useCallback(async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  }, [saveText, downloadFileName]);
 
   const onFetchResult = useCallback(async () => {
     const trimmed = url.trim();
@@ -411,7 +461,8 @@ export function useFacebookController() {
         saveText: getErrorMessage(e, "Gagal memuat preview video"),
       });
     } finally {
-      if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
+      if (previewRequestIdRef.current === requestId)
+        previewDownloadRef.current = null;
     }
   }, [url, baseUrl, videoInfo, qc, setUi]);
 
@@ -419,7 +470,11 @@ export function useFacebookController() {
     previewRequestIdRef.current += 1;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ isPreviewOpen: false, previewLoadPercent: 0, previewLoadText: null });
+    setUi({
+      isPreviewOpen: false,
+      previewLoadPercent: 0,
+      previewLoadText: null,
+    });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -686,7 +741,11 @@ export function useFacebookController() {
     metadata,
     videoInfo,
     errorText,
-    history: history.data ?? [],
+    history: historyItems,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,
@@ -704,7 +763,6 @@ export function useFacebookController() {
     isDownloadPaused,
     isDownloadReadyToSave,
     isDownloadSuccessOpen,
-    onClearHistory,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
@@ -713,5 +771,7 @@ export function useFacebookController() {
     onPreview,
     onDownloadVideoMp4,
     onTogglePauseOrSave,
+    onOpenFacebookApp,
+    onShareDownloaded,
   };
 }

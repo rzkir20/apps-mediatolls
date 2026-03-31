@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { Linking, Share } from "react-native";
+
 import * as Clipboard from "expo-clipboard";
 
 import * as FileSystem from "expo-file-system/legacy";
@@ -25,32 +27,6 @@ function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
   return `${cacheDir}preview-youtube-${key}.mp4`;
 }
 
-type YoutubeUiState = {
-  url: string;
-
-  isPreviewOpen: boolean;
-  previewUrl: string | null;
-  previewLoadPercent: number;
-  previewLoadText: string | null;
-  saveText: string | null;
-
-  selectedFormatIndex: number;
-
-  isDownloadOpen: boolean;
-  downloadPercent: number;
-  downloadPillText: string | null;
-  downloadSubText: string | null;
-  downloadFileName: string;
-
-  downloadSpeedText: string | null;
-  downloadRemainingText: string | null;
-  downloadTotalText: string | null;
-
-  isDownloadPaused: boolean;
-  isDownloadReadyToSave: boolean;
-  isDownloadSuccessOpen: boolean;
-};
-
 function getDefaultUiState(): YoutubeUiState {
   return {
     url: "",
@@ -60,6 +36,9 @@ function getDefaultUiState(): YoutubeUiState {
     previewLoadPercent: 0,
     previewLoadText: null,
     saveText: null,
+
+    isQualitySheetOpen: false,
+    isConfirmClearOpen: false,
 
     selectedFormatIndex: 0,
 
@@ -142,8 +121,7 @@ function buildVideoInfo(
     .sort(
       (a, b) =>
         parseQuality(b.qualityLabel ?? null) -
-          parseQuality(a.qualityLabel ?? null) ||
-        getItag(b) - getItag(a),
+          parseQuality(a.qualityLabel ?? null) || getItag(b) - getItag(a),
     );
 
   const seenItags = new Set<number>();
@@ -178,8 +156,6 @@ function buildVideoInfo(
     id: data.id ?? undefined,
   };
 }
-
-type DownloadKind = "video" | "audio";
 
 export function useYoutubeController() {
   const { apiUrl } = useAppConfig();
@@ -226,6 +202,10 @@ export function useYoutubeController() {
   const previewLoadPercent = ui.data.previewLoadPercent;
   const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
+
+  const isQualitySheetOpen = ui.data.isQualitySheetOpen;
+  const isConfirmClearOpen = ui.data.isConfirmClearOpen;
+
   const selectedFormatIndex = ui.data.selectedFormatIndex;
 
   const isDownloadOpen = ui.data.isDownloadOpen;
@@ -256,6 +236,24 @@ export function useYoutubeController() {
     (next: number) => setUi({ selectedFormatIndex: Math.max(0, next) }),
     [setUi],
   );
+
+  const setIsQualitySheetOpen = useCallback(
+    (next: boolean) => setUi({ isQualitySheetOpen: next }),
+    [setUi],
+  );
+
+  const setIsConfirmClearOpen = useCallback(
+    (next: boolean) => setUi({ isConfirmClearOpen: next }),
+    [setUi],
+  );
+
+  const openQualitySheet = useCallback(() => {
+    setIsQualitySheetOpen(true);
+  }, [setIsQualitySheetOpen]);
+
+  const closeQualitySheet = useCallback(() => {
+    setIsQualitySheetOpen(false);
+  }, [setIsQualitySheetOpen]);
 
   const setHistory = useCallback(
     async (next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => {
@@ -333,6 +331,30 @@ export function useYoutubeController() {
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
+  const historyItems = history.data ?? [];
+  const historyLength = historyItems.length;
+
+  const openConfirmClearHistory = useCallback(() => {
+    if (!historyLength) return;
+    setIsConfirmClearOpen(true);
+  }, [historyLength, setIsConfirmClearOpen]);
+
+  const closeConfirmClearHistory = useCallback(() => {
+    setIsConfirmClearOpen(false);
+  }, [setIsConfirmClearOpen]);
+
+  const onConfirmClearHistory = useCallback(async () => {
+    closeConfirmClearHistory();
+    await onClearHistory();
+  }, [closeConfirmClearHistory, onClearHistory]);
+
+  const onDeleteHistoryItem = useCallback(
+    async (id: string) => {
+      await setHistory((prev) => prev.filter((item) => item.id !== id));
+    },
+    [setHistory],
+  );
+
   const metadataQuery = useQuery({
     queryKey: ["youtube", "metadata", baseUrl, url.trim()] as const,
     queryFn: async () => {
@@ -393,6 +415,33 @@ export function useYoutubeController() {
     const text = await Clipboard.getStringAsync();
     if (text) setUi({ url: text.trim() });
   }, [setUi]);
+
+  const onOpenYoutubeApp = useCallback(async () => {
+    const candidates = ["youtube://www.youtube.com", "vnd.youtube://"];
+    for (const u of candidates) {
+      try {
+        const supported = await Linking.canOpenURL(u);
+        if (supported) {
+          await Linking.openURL(u);
+          return;
+        }
+      } catch {
+        /* continue */
+      }
+    }
+    await Linking.openURL("https://www.youtube.com/");
+  }, []);
+
+  const onShareDownloaded = useCallback(async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  }, [saveText, downloadFileName]);
 
   const onFetchResult = useCallback(async () => {
     const trimmed = url.trim();
@@ -877,7 +926,14 @@ export function useYoutubeController() {
     videoInfo,
     effectivePreviewVideoUrl,
     errorText,
-    history: history.data ?? [],
+    history: historyItems,
+    isQualitySheetOpen,
+    openQualitySheet,
+    closeQualitySheet,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,
@@ -898,6 +954,7 @@ export function useYoutubeController() {
     isDownloadReadyToSave,
     isDownloadSuccessOpen,
     onClearHistory,
+    onDeleteHistoryItem,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
@@ -907,5 +964,7 @@ export function useYoutubeController() {
     onDownloadVideoMp4,
     onDownloadAudioMp3,
     onTogglePauseOrSave,
+    onOpenYoutubeApp,
+    onShareDownloaded,
   };
 }

@@ -6,20 +6,9 @@ import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { DownloadSuccessModal } from "@/components/ui/download-succes";
 
-import {
-  LayoutChangeEvent,
-  Linking,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import { useState } from "react";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
@@ -33,10 +22,10 @@ import { SupportedFormatCards } from "@/components/ui/card";
 
 import { historyTypeIconName, FORMAT_BADGES } from "@/components/ui/helper";
 
+import { DeleteConfirmModal } from "@/components/ui/delete";
+
 export default function InstagramScreen() {
   const insets = useSafeAreaInsets();
-  const [coverWidth, setCoverWidth] = useState(0);
-  const [coverPhotoIndex, setCoverPhotoIndex] = useState(0);
 
   const {
     url,
@@ -46,6 +35,12 @@ export default function InstagramScreen() {
     metadata,
     errorText,
     history,
+    coverWidth,
+    coverPhotoIndex,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,
@@ -69,54 +64,33 @@ export default function InstagramScreen() {
     onPaste,
     onFetchResult,
     onPreview,
-    onClearHistory,
     onDownloadVideoMp4,
     onDownloadPhotos,
     onTogglePauseOrSave,
+    onOpenInstagramApp,
+    onShareDownloaded,
+    onCoverLayout,
+    onCoverPhotoScrollEnd,
   } = useInstagramController();
 
   const tabBarOffset = 88 + insets.bottom;
   const isPhotoPost = !!metadata?.images?.length;
 
-  const onCoverLayout = (e: LayoutChangeEvent) => {
-    const w = e.nativeEvent.layout.width;
-    if (w > 0) setCoverWidth(w);
-  };
-
-  const onCoverPhotoScrollEnd = (e: {
-    nativeEvent: { contentOffset: { x: number } };
-  }) => {
-    const w = coverWidth || 0;
-    if (!w) return;
-    const idx = Math.round(e.nativeEvent.contentOffset.x / w);
-    setCoverPhotoIndex(Math.max(0, idx));
-  };
-
-  const onOpenInstagramApp = async () => {
-    const candidates = ["instagram://", "instagram://app"];
-    for (const u of candidates) {
-      const supported = await Linking.canOpenURL(u);
-      if (supported) {
-        await Linking.openURL(u);
-        return;
-      }
-    }
-    await Linking.openURL("https://www.instagram.com/");
-  };
-
-  const onShareDownloaded = async () => {
-    const shareText =
-      saveText?.trim() ||
-      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
-    try {
-      await Share.share({ message: shareText });
-    } catch {
-      // noop
-    }
-  };
-
   return (
     <View className="flex-1 bg-social-bg">
+      <DeleteConfirmModal
+        visible={isConfirmClearOpen}
+        title="Hapus semua riwayat?"
+        description="Semua riwayat download Instagram akan dihapus permanen dan tidak bisa dikembalikan."
+        cancelLabel="Batal"
+        confirmLabel="Hapus"
+        iconName="history.clear"
+        iconColor="#f97373"
+        onCancel={closeConfirmClearHistory}
+        onConfirm={() => {
+          void onConfirmClearHistory();
+        }}
+      />
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -440,7 +414,7 @@ export default function InstagramScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={onClearHistory}
+              onPress={openConfirmClearHistory}
               disabled={!history?.length}
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}

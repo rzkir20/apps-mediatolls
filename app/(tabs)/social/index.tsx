@@ -8,15 +8,7 @@ import { DownloadSuccessModal } from "@/components/ui/download-succes";
 
 import { useState } from "react";
 
-import {
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-  Linking,
-  Share,
-} from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -30,6 +22,8 @@ import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
 import { SupportedFormatCards } from "@/components/ui/card";
 
 import { historyTypeIconName, FORMAT_BADGES } from "@/components/ui/helper";
+
+import { DeleteConfirmModal } from "@/components/ui/delete";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -78,87 +72,29 @@ export default function HomeScreen() {
     onDownloadAudioMp3,
     onDownloadPhotos,
     onTogglePauseOrSave,
+    onOpenTikTokApp,
+    onShareDownloaded,
   } = useTiktokController();
 
   const tabBarOffset = 88 + insets.bottom;
   const isPhotoPost = !!metadata?.images?.length;
 
-  const onConfirmClearHistory = () => {
-    if (!history?.length) return;
-    setIsConfirmClearOpen(true);
-  };
-
-  const onOpenTikTokApp = async () => {
-    const candidates = ["tiktok://"];
-    for (const url of candidates) {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-        return;
-      }
-    }
-
-    await Linking.openURL("https://www.tiktok.com/");
-  };
-
-  const onShareDownloaded = async () => {
-    const shareText =
-      saveText?.trim() ||
-      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
-    try {
-      await Share.share({ message: shareText });
-    } catch {
-      // noop
-    }
-  };
-
   return (
     <View className="flex-1 bg-social-bg">
-      {isConfirmClearOpen && (
-        <View className="absolute inset-0 z-50 bg-[#05060f]/70 items-center justify-center px-6">
-          <View className="w-full max-w-sm bg-[#0c0d1b] border border-white/10 rounded-[32px] p-6">
-            <View className="flex-row items-center gap-3 mb-4">
-              <View className="w-9 h-9 rounded-2xl bg-red-500/15 items-center justify-center">
-                <IconSymbol name="history.clear" size={20} color="#f97373" />
-              </View>
-              <Text
-                className="text-base font-extrabold text-white"
-                numberOfLines={2}
-              >
-                Hapus semua riwayat?
-              </Text>
-            </View>
-
-            <Text className="text-xs text-social-slate-500 leading-relaxed mb-6">
-              Semua riwayat download TikTok akan dihapus permanen dan tidak bisa
-              dikembalikan.
-            </Text>
-
-            <View className="flex-row gap-3">
-              <Pressable
-                onPress={() => setIsConfirmClearOpen(false)}
-                className="flex-1 py-3 rounded-2xl bg-white/5 border border-white/10 items-center justify-center active:opacity-90"
-              >
-                <Text className="text-[11px] font-black uppercase tracking-widest text-white">
-                  Batal
-                </Text>
-              </Pressable>
-
-              <Pressable
-                onPress={() => {
-                  setIsConfirmClearOpen(false);
-                  void onClearHistory();
-                }}
-                className="flex-1 py-3 rounded-2xl bg-red-500 items-center justify-center active:opacity-90"
-              >
-                <Text className="text-[11px] font-black uppercase tracking-widest text-white">
-                  Hapus
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      )}
+      <DeleteConfirmModal
+        visible={isConfirmClearOpen}
+        title="Hapus semua riwayat?"
+        description="Semua riwayat download TikTok akan dihapus permanen dan tidak bisa dikembalikan."
+        cancelLabel="Batal"
+        confirmLabel="Hapus"
+        iconName="history.clear"
+        iconColor="#f97373"
+        onCancel={() => setIsConfirmClearOpen(false)}
+        onConfirm={() => {
+          setIsConfirmClearOpen(false);
+          void onClearHistory();
+        }}
+      />
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -507,7 +443,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={onConfirmClearHistory}
+              onPress={() => setIsConfirmClearOpen(true)}
               disabled={!history?.length}
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}

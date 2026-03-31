@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
 
-import { useState } from "react";
+import { Swipeable } from "react-native-gesture-handler";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
@@ -11,10 +11,8 @@ import { DownloadSuccessModal } from "@/components/ui/download-succes";
 import { BottomSheets } from "@/components/BottomSheets";
 
 import {
-  Linking,
   Pressable,
   ScrollView,
-  Share,
   Text,
   TextInput,
   useWindowDimensions,
@@ -38,10 +36,11 @@ import {
   SUPPORTED_FORMAT_CARDS,
 } from "@/components/ui/helper";
 
+import { DeleteConfirmModal } from "@/components/ui/delete";
+
 export default function YoutubeScreen() {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
-  const [isQualitySheetOpen, setIsQualitySheetOpen] = useState(false);
   const qualitySheetBodyHeight = Math.max(
     220,
     Math.min(420, Math.round(windowHeight * 0.45)),
@@ -64,6 +63,13 @@ export default function YoutubeScreen() {
     saveText,
     selectedFormatIndex,
     setSelectedFormatIndex,
+    isQualitySheetOpen,
+    openQualitySheet,
+    closeQualitySheet,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     isDownloadOpen,
     downloadPercent,
     downloadPillText,
@@ -75,7 +81,6 @@ export default function YoutubeScreen() {
     isDownloadPaused,
     isDownloadReadyToSave,
     isDownloadSuccessOpen,
-    onClearHistory,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
@@ -85,40 +90,29 @@ export default function YoutubeScreen() {
     onDownloadVideoMp4,
     onDownloadAudioMp3,
     onTogglePauseOrSave,
+    onOpenYoutubeApp,
+    onShareDownloaded,
+    onDeleteHistoryItem,
   } = useYoutubeController();
 
   const tabBarOffset = 88 + insets.bottom;
   const audioAvailable = !!videoInfo?.audioUrl;
 
-  const onOpenYoutubeApp = async () => {
-    const candidates = ["youtube://www.youtube.com", "vnd.youtube://"];
-    for (const u of candidates) {
-      try {
-        const supported = await Linking.canOpenURL(u);
-        if (supported) {
-          await Linking.openURL(u);
-          return;
-        }
-      } catch {
-        /* continue */
-      }
-    }
-    await Linking.openURL("https://www.youtube.com/");
-  };
-
-  const onShareDownloaded = async () => {
-    const shareText =
-      saveText?.trim() ||
-      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
-    try {
-      await Share.share({ message: shareText });
-    } catch {
-      // noop
-    }
-  };
-
   return (
     <View className="flex-1 bg-social-bg">
+      <DeleteConfirmModal
+        visible={isConfirmClearOpen}
+        title="Hapus semua riwayat?"
+        description="Semua riwayat download YouTube akan dihapus permanen dan tidak bisa dikembalikan."
+        cancelLabel="Batal"
+        confirmLabel="Hapus"
+        iconName="history.clear"
+        iconColor="#f97373"
+        onCancel={closeConfirmClearHistory}
+        onConfirm={() => {
+          void onConfirmClearHistory();
+        }}
+      />
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -324,7 +318,7 @@ export default function YoutubeScreen() {
                         </Text>
 
                         <Pressable
-                          onPress={() => setIsQualitySheetOpen(true)}
+                          onPress={openQualitySheet}
                           className="px-4 py-2 rounded-full border flex-row items-center justify-between"
                           style={{
                             borderColor: "rgba(255,255,255,0.15)",
@@ -406,7 +400,7 @@ export default function YoutubeScreen() {
 
             <BottomSheets
               visible={isQualitySheetOpen}
-              onClose={() => setIsQualitySheetOpen(false)}
+              onClose={closeQualitySheet}
               title="Quality"
             >
               <View
@@ -435,7 +429,7 @@ export default function YoutubeScreen() {
                         key={`${opt.index}-${opt.label}`}
                         onPress={() => {
                           setSelectedFormatIndex(opt.index);
-                          setIsQualitySheetOpen(false);
+                          closeQualitySheet();
                         }}
                         className="px-4 py-3 rounded-2xl border"
                         style={[
@@ -482,7 +476,7 @@ export default function YoutubeScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={onClearHistory}
+              onPress={openConfirmClearHistory}
               disabled={!history?.length}
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}
@@ -505,55 +499,74 @@ export default function YoutubeScreen() {
               {history.slice(0, 10).map((item) => {
                 const typeIcon = historyTypeIconName(item.type);
                 return (
-                  <Pressable
+                  <Swipeable
                     key={item.id}
-                    onPress={() => setUrl(item.url)}
-                    className="flex-row items-center gap-3 p-3 rounded-3xl bg-white/5 border border-white/10 active:opacity-90"
+                    overshootRight={false}
+                    renderRightActions={() => (
+                      <View className="flex-row items-stretch justify-end">
+                        <Pressable
+                          onPress={() => onDeleteHistoryItem(item.id)}
+                          className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                          style={{ width: 72 }}
+                        >
+                          <IconSymbol name="trash" size={18} color="#fff" />
+                        </Pressable>
+                      </View>
+                    )}
                   >
-                    <View className="w-14 h-14 rounded-2xl overflow-hidden bg-black/40 border border-white/10 relative">
-                      {!!item.cover ? (
-                        <Image
-                          source={{ uri: item.cover }}
-                          style={{ width: "100%", height: "100%" }}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View className="flex-1 items-center justify-center">
-                          <IconSymbol
-                            name={typeIcon}
-                            size={22}
-                            color={socialPalette.slate500}
+                    <Pressable
+                      onPress={() => setUrl(item.url)}
+                      className="flex-row items-center gap-3 p-3 rounded-3xl bg-white/5 border border-white/10 active:opacity-90 mr-2"
+                    >
+                      <View className="w-20 h-20 rounded-2xl overflow-hidden bg-black/40 border border-white/10 relative">
+                        {!!item.cover ? (
+                          <Image
+                            source={{ uri: item.cover }}
+                            style={{ width: "100%", height: "100%" }}
+                            contentFit="cover"
                           />
-                        </View>
-                      )}
-                      {!!item.cover ? (
-                        <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                          <IconSymbol name={typeIcon} size={12} color="#fff" />
-                        </View>
-                      ) : null}
-                    </View>
+                        ) : (
+                          <View className="flex-1 items-center justify-center">
+                            <IconSymbol
+                              name={typeIcon}
+                              size={22}
+                              color={socialPalette.slate500}
+                            />
+                          </View>
+                        )}
+                        {!!item.cover ? (
+                          <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
+                            <IconSymbol
+                              name={typeIcon}
+                              size={12}
+                              color="#fff"
+                            />
+                          </View>
+                        ) : null}
+                      </View>
 
-                    <View className="flex-1">
-                      <Text
-                        className="text-white font-extrabold text-xs"
-                        numberOfLines={2}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text
-                        className="text-social-slate-500 text-[10px] mt-1 font-semibold"
-                        numberOfLines={1}
-                      >
-                        {item.author || item.type}
-                      </Text>
-                    </View>
+                      <View className="flex-1">
+                        <Text
+                          className="text-white font-extrabold text-xs"
+                          numberOfLines={2}
+                        >
+                          {item.title}
+                        </Text>
+                        <Text
+                          className="text-social-slate-500 text-[10px] mt-1 font-semibold"
+                          numberOfLines={1}
+                        >
+                          {item.author || item.type}
+                        </Text>
+                      </View>
 
-                    <IconSymbol
-                      name="arrow.right"
-                      size={18}
-                      color="rgba(255,255,255,0.35)"
-                    />
-                  </Pressable>
+                      <IconSymbol
+                        name="chevron.right"
+                        size={18}
+                        color="rgba(255,255,255,0.35)"
+                      />
+                    </Pressable>
+                  </Swipeable>
                 );
               })}
             </View>

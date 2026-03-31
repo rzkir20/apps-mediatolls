@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import type { LayoutChangeEvent } from "react-native";
+import { Linking, Share, type LayoutChangeEvent } from "react-native";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -89,19 +89,17 @@ function formatSeconds(s: number) {
   return `${mm}:${ss}`;
 }
 
-type DownloadKind = "video" | "audio" | "photos";
-
 export function useTiktokController() {
   const { apiUrl } = useAppConfig();
   const baseUrl = apiUrl ?? "";
   const qc = useQueryClient();
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const downloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
-    null,
-  );
-  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
-    null,
-  );
+  const downloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
+  const previewDownloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const previewRequestIdRef = useRef(0);
   const previewCacheRef = useRef<Record<string, string>>({});
   const downloadedFileUrisRef = useRef<string[]>([]);
@@ -191,12 +189,15 @@ export function useTiktokController() {
       if (!trimmedUrl) return;
 
       const isImage = !!meta.images?.length;
-      const cover = isImage ? meta.images?.[0] ?? meta.cover ?? "" : meta.cover ?? "";
+      const cover = isImage
+        ? (meta.images?.[0] ?? meta.cover ?? "")
+        : (meta.cover ?? "");
 
       const item: HistoryItem = {
         id: String(Date.now()),
         url: trimmedUrl,
-        title: meta.text?.trim() || (isImage ? "TikTok Photos" : "TikTok Video"),
+        title:
+          meta.text?.trim() || (isImage ? "TikTok Photos" : "TikTok Video"),
         author: meta.author ? `@${meta.author}` : undefined,
         cover,
         type: isImage ? "Image" : "Video",
@@ -448,7 +449,8 @@ export function useTiktokController() {
       const { downloadUrl, ext } = args;
       if (!downloadUrl) throw new Error("URL download tidak tersedia");
 
-      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const cacheDir =
+        FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
       const fileNameSafe = `tiktok-${Date.now()}.${ext}`;
@@ -471,7 +473,9 @@ export function useTiktokController() {
             const dt = Math.max(0.25, (now - prev.lastTs) / 1000);
             const db = Math.max(0, written - prev.lastBytes);
             const inst = db / dt;
-            prev.speedBps = prev.speedBps ? prev.speedBps * 0.7 + inst * 0.3 : inst;
+            prev.speedBps = prev.speedBps
+              ? prev.speedBps * 0.7 + inst * 0.3
+              : inst;
             prev.lastTs = now;
             prev.lastBytes = written;
           }
@@ -524,9 +528,11 @@ export function useTiktokController() {
     mutationKey: ["tiktok", "download", "photos", baseUrl, url.trim()],
     mutationFn: async (args: { imageUrls: string[] }) => {
       const imageUrls = args.imageUrls.filter(Boolean);
-      if (!imageUrls.length) throw new Error("Tidak ada foto untuk di-download");
+      if (!imageUrls.length)
+        throw new Error("Tidak ada foto untuk di-download");
 
-      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const cacheDir =
+        FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
       downloadedFileUrisRef.current = [];
@@ -548,7 +554,9 @@ export function useTiktokController() {
           downloadTotalText: `${i} / ${total} photos`,
         });
 
-        const file = await FileSystem.downloadAsync(u, fileUri, { cache: true });
+        const file = await FileSystem.downloadAsync(u, fileUri, {
+          cache: true,
+        });
         if (!file?.uri) throw new Error("Download foto gagal");
         downloadedFileUrisRef.current.push(file.uri);
       }
@@ -602,21 +610,25 @@ export function useTiktokController() {
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
 
-      const album = await MediaLibrary.createAlbumAsync(albumName, first, false).catch(
-        async () => {
-          const found = await MediaLibrary.getAlbumAsync(albumName);
-          if (!found) {
-            // If createAlbumAsync failed for other reason, rethrow by forcing asset add.
-            throw new Error("Gagal membuat album");
-          }
-          return found;
-        },
-      );
+      const album = await MediaLibrary.createAlbumAsync(
+        albumName,
+        first,
+        false,
+      ).catch(async () => {
+        const found = await MediaLibrary.getAlbumAsync(albumName);
+        if (!found) {
+          // If createAlbumAsync failed for other reason, rethrow by forcing asset add.
+          throw new Error("Gagal membuat album");
+        }
+        return found;
+      });
 
       if (assets.length > 1) {
-        await MediaLibrary.addAssetsToAlbumAsync(assets.slice(1), album, false).catch(
-          () => {},
-        );
+        await MediaLibrary.addAssetsToAlbumAsync(
+          assets.slice(1),
+          album,
+          false,
+        ).catch(() => {});
       }
 
       return assets;
@@ -682,17 +694,31 @@ export function useTiktokController() {
       });
       throw e;
     }
-  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+  }, [
+    metadata,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadSingleMutation,
+    setUi,
+  ]);
 
   const onDownloadAudioMp3 = useCallback(async () => {
     const title = metadata?.text?.trim();
-    startDownloadUi({ fileName: title ? `${title} (MP3)` : "TikTok Audio", kind: "audio" });
+    startDownloadUi({
+      fileName: title ? `${title} (MP3)` : "TikTok Audio",
+      kind: "audio",
+    });
 
     if (!url.trim() || !baseUrl || isSaving) return;
     try {
       const audio = metadata?.audioUrl;
       if (!audio) throw new Error("Audio tidak tersedia untuk post ini");
-      await downloadSingleMutation.mutateAsync({ downloadUrl: audio, ext: "mp3" });
+      await downloadSingleMutation.mutateAsync({
+        downloadUrl: audio,
+        ext: "mp3",
+      });
     } catch (e) {
       const msg = getErrorMessage(e, "Gagal download audio");
       setUi({
@@ -702,11 +728,22 @@ export function useTiktokController() {
       });
       throw e;
     }
-  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+  }, [
+    metadata,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadSingleMutation,
+    setUi,
+  ]);
 
   const onDownloadPhotos = useCallback(async () => {
     const title = metadata?.text?.trim();
-    startDownloadUi({ fileName: title ? `${title} (Photos)` : "TikTok Photos", kind: "photos" });
+    startDownloadUi({
+      fileName: title ? `${title} (Photos)` : "TikTok Photos",
+      kind: "photos",
+    });
 
     if (!url.trim() || !baseUrl || isSaving) return;
     try {
@@ -722,7 +759,15 @@ export function useTiktokController() {
       });
       throw e;
     }
-  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadPhotosMutation, setUi]);
+  }, [
+    metadata,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadPhotosMutation,
+    setUi,
+  ]);
 
   const onTogglePauseOrSave = useCallback(async () => {
     if (downloadPercent >= 100 && isDownloadReadyToSave) {
@@ -744,7 +789,11 @@ export function useTiktokController() {
     }
 
     await t.pauseAsync();
-    setUi({ isDownloadPaused: true, downloadPillText: "Paused", downloadSubText: null });
+    setUi({
+      isDownloadPaused: true,
+      downloadPillText: "Paused",
+      downloadSubText: null,
+    });
   }, [
     downloadPercent,
     isDownloadReadyToSave,
@@ -752,6 +801,34 @@ export function useTiktokController() {
     saveToGalleryMutation,
     setUi,
   ]);
+
+  const onConfirmClearHistory = () => {
+    if (!history.data?.length) return;
+  };
+
+  const onOpenTikTokApp = async () => {
+    const candidates = ["tiktok://"];
+    for (const url of candidates) {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+        return;
+      }
+    }
+
+    await Linking.openURL("https://www.tiktok.com/");
+  };
+
+  const onShareDownloaded = async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  };
 
   return {
     baseUrl,
@@ -798,5 +875,8 @@ export function useTiktokController() {
     onDownloadAudioMp3,
     onDownloadPhotos,
     onTogglePauseOrSave,
+    onConfirmClearHistory,
+    onOpenTikTokApp,
+    onShareDownloaded,
   };
 }

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
+import { LayoutChangeEvent, Linking, Share } from "react-native";
+
 import * as Clipboard from "expo-clipboard";
 
 import * as FileSystem from "expo-file-system/legacy";
@@ -24,30 +26,6 @@ function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
   return `${cacheDir}preview-instagram-${key}.mp4`;
 }
 
-type InstagramUiState = {
-  url: string;
-
-  isPreviewOpen: boolean;
-  previewUrl: string | null;
-  previewLoadPercent: number;
-  previewLoadText: string | null;
-  saveText: string | null;
-
-  isDownloadOpen: boolean;
-  downloadPercent: number;
-  downloadPillText: string | null;
-  downloadSubText: string | null;
-  downloadFileName: string;
-
-  downloadSpeedText: string | null;
-  downloadRemainingText: string | null;
-  downloadTotalText: string | null;
-
-  isDownloadPaused: boolean;
-  isDownloadReadyToSave: boolean;
-  isDownloadSuccessOpen: boolean;
-};
-
 function getDefaultUiState(): InstagramUiState {
   return {
     url: "",
@@ -57,6 +35,11 @@ function getDefaultUiState(): InstagramUiState {
     previewLoadPercent: 0,
     previewLoadText: null,
     saveText: null,
+
+    coverWidth: 0,
+    coverPhotoIndex: 0,
+
+    isConfirmClearOpen: false,
 
     isDownloadOpen: false,
     downloadPercent: 0,
@@ -123,8 +106,10 @@ function buildVideoInfo(
   const count = images?.length ?? (data.cover ? 1 : 0);
   const trimmedUrl = url.trim();
   const previewImageUrls = count
-    ? Array.from({ length: count }, (_, i) =>
-        `${baseUrl}/api/instagram/preview-image?url=${encodeURIComponent(trimmedUrl)}&index=${i}`,
+    ? Array.from(
+        { length: count },
+        (_, i) =>
+          `${baseUrl}/api/instagram/preview-image?url=${encodeURIComponent(trimmedUrl)}&index=${i}`,
       )
     : undefined;
 
@@ -148,14 +133,15 @@ export function useInstagramController() {
   const qc = useQueryClient();
 
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const downloadRef =
-    useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(null);
+  const downloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const downloadedFileUrisRef = useRef<string[]>([]);
   const downloadKindRef = useRef<DownloadKind>("video");
   const historyHydratedRef = useRef(false);
-  const previewDownloadRef = useRef<ReturnType<typeof FileSystem.createDownloadResumable> | null>(
-    null,
-  );
+  const previewDownloadRef = useRef<ReturnType<
+    typeof FileSystem.createDownloadResumable
+  > | null>(null);
   const previewRequestIdRef = useRef(0);
   const previewCacheRef = useRef<Record<string, string>>({});
   const progressRef = useRef<{
@@ -187,6 +173,11 @@ export function useInstagramController() {
   const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
 
+  const coverWidth = ui.data.coverWidth;
+  const coverPhotoIndex = ui.data.coverPhotoIndex;
+
+  const isConfirmClearOpen = ui.data.isConfirmClearOpen;
+
   const isDownloadOpen = ui.data.isDownloadOpen;
   const downloadPercent = ui.data.downloadPercent;
   const downloadPillText = ui.data.downloadPillText;
@@ -212,9 +203,7 @@ export function useInstagramController() {
   const setUrl = useCallback((next: string) => setUi({ url: next }), [setUi]);
 
   const setHistory = useCallback(
-    async (
-      next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[]),
-    ) => {
+    async (next: HistoryItem[] | ((prev: HistoryItem[]) => HistoryItem[])) => {
       const current = qc.getQueryData<HistoryItem[]>(historyKey) ?? [];
       const value =
         typeof next === "function"
@@ -241,12 +230,16 @@ export function useInstagramController() {
       if (!trimmedUrl) return;
 
       const isImage = !!meta.images?.length;
-      const cover = isImage ? meta.images?.[0] ?? meta.cover ?? "" : meta.cover ?? "";
+      const cover = isImage
+        ? (meta.images?.[0] ?? meta.cover ?? "")
+        : (meta.cover ?? "");
 
       const item: HistoryItem = {
         id: String(Date.now()),
         url: trimmedUrl,
-        title: meta.text?.trim() || (isImage ? "Instagram Photos" : "Instagram Video"),
+        title:
+          meta.text?.trim() ||
+          (isImage ? "Instagram Photos" : "Instagram Video"),
         author: meta.author ? `@${meta.author}` : undefined,
         cover,
         type: isImage ? "Image" : "Video",
@@ -265,6 +258,23 @@ export function useInstagramController() {
     qc.setQueryData<HistoryItem[]>(historyKey, []);
     await AsyncStorage.removeItem(STORAGE_KEY_INSTAGRAM_HISTORY);
   }, [qc]);
+
+  const historyItems = history.data ?? [];
+  const historyLength = historyItems.length;
+
+  const openConfirmClearHistory = useCallback(() => {
+    if (!historyLength) return;
+    setUi({ isConfirmClearOpen: true });
+  }, [historyLength, setUi]);
+
+  const closeConfirmClearHistory = useCallback(() => {
+    setUi({ isConfirmClearOpen: false });
+  }, [setUi]);
+
+  const onConfirmClearHistory = useCallback(async () => {
+    closeConfirmClearHistory();
+    await onClearHistory();
+  }, [closeConfirmClearHistory, onClearHistory]);
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
@@ -307,6 +317,51 @@ export function useInstagramController() {
     const text = await Clipboard.getStringAsync();
     if (text) setUi({ url: text.trim() });
   }, [setUi]);
+
+  const onCoverLayout = useCallback(
+    (e: LayoutChangeEvent) => {
+      const w = e.nativeEvent.layout.width;
+      if (w > 0) setUi({ coverWidth: w });
+    },
+    [setUi],
+  );
+
+  const onCoverPhotoScrollEnd = useCallback(
+    (e: { nativeEvent: { contentOffset: { x: number } } }) => {
+      const w = coverWidth || 0;
+      if (!w) return;
+      const idx = Math.round(e.nativeEvent.contentOffset.x / w);
+      setUi({ coverPhotoIndex: Math.max(0, idx) });
+    },
+    [coverWidth, setUi],
+  );
+
+  const onOpenInstagramApp = useCallback(async () => {
+    const candidates = ["instagram://", "instagram://app"];
+    for (const u of candidates) {
+      try {
+        const supported = await Linking.canOpenURL(u);
+        if (supported) {
+          await Linking.openURL(u);
+          return;
+        }
+      } catch {
+        /* continue */
+      }
+    }
+    await Linking.openURL("https://www.instagram.com/");
+  }, []);
+
+  const onShareDownloaded = useCallback(async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  }, [saveText, downloadFileName]);
 
   const onFetchResult = useCallback(async () => {
     const trimmed = url.trim();
@@ -434,7 +489,8 @@ export function useInstagramController() {
         saveText: getErrorMessage(e, "Gagal memuat preview video"),
       });
     } finally {
-      if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
+      if (previewRequestIdRef.current === requestId)
+        previewDownloadRef.current = null;
     }
   }, [url, baseUrl, metadata, qc, setUi]);
 
@@ -474,7 +530,8 @@ export function useInstagramController() {
       const { downloadUrl, ext } = args;
       if (!downloadUrl) throw new Error("URL download tidak tersedia");
 
-      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const cacheDir =
+        FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
       const fileNameSafe = `instagram-${Date.now()}.${ext}`;
@@ -497,7 +554,9 @@ export function useInstagramController() {
             const dt = Math.max(0.25, (now - prev.lastTs) / 1000);
             const db = Math.max(0, written - prev.lastBytes);
             const inst = db / dt;
-            prev.speedBps = prev.speedBps ? prev.speedBps * 0.7 + inst * 0.3 : inst;
+            prev.speedBps = prev.speedBps
+              ? prev.speedBps * 0.7 + inst * 0.3
+              : inst;
             prev.lastTs = now;
             prev.lastBytes = written;
           }
@@ -550,9 +609,11 @@ export function useInstagramController() {
     mutationKey: ["instagram", "download", "photos", baseUrl, url.trim()],
     mutationFn: async (args: { imageUrls: string[] }) => {
       const imageUrls = args.imageUrls.filter(Boolean);
-      if (!imageUrls.length) throw new Error("Tidak ada foto untuk di-download");
+      if (!imageUrls.length)
+        throw new Error("Tidak ada foto untuk di-download");
 
-      const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+      const cacheDir =
+        FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
       if (!cacheDir) throw new Error("Cache directory tidak tersedia");
 
       downloadedFileUrisRef.current = [];
@@ -574,7 +635,9 @@ export function useInstagramController() {
           downloadTotalText: `${i} / ${total} photos`,
         });
 
-        const file = await FileSystem.downloadAsync(u, fileUri, { cache: true });
+        const file = await FileSystem.downloadAsync(u, fileUri, {
+          cache: true,
+        });
         if (!file?.uri) throw new Error("Download foto gagal");
         downloadedFileUrisRef.current.push(file.uri);
       }
@@ -628,18 +691,22 @@ export function useInstagramController() {
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
 
-      const album = await MediaLibrary.createAlbumAsync(albumName, first, false).catch(
-        async () => {
-          const found = await MediaLibrary.getAlbumAsync(albumName);
-          if (!found) throw new Error("Gagal membuat album");
-          return found;
-        },
-      );
+      const album = await MediaLibrary.createAlbumAsync(
+        albumName,
+        first,
+        false,
+      ).catch(async () => {
+        const found = await MediaLibrary.getAlbumAsync(albumName);
+        if (!found) throw new Error("Gagal membuat album");
+        return found;
+      });
 
       if (assets.length > 1) {
-        await MediaLibrary.addAssetsToAlbumAsync(assets.slice(1), album, false).catch(
-          () => {},
-        );
+        await MediaLibrary.addAssetsToAlbumAsync(
+          assets.slice(1),
+          album,
+          false,
+        ).catch(() => {});
       }
 
       return assets;
@@ -706,11 +773,22 @@ export function useInstagramController() {
       });
       throw e;
     }
-  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadSingleMutation, setUi]);
+  }, [
+    metadata,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadSingleMutation,
+    setUi,
+  ]);
 
   const onDownloadPhotos = useCallback(async () => {
     const title = metadata?.text?.trim();
-    startDownloadUi({ fileName: title ? `${title} (Photos)` : "Instagram Photos", kind: "photos" });
+    startDownloadUi({
+      fileName: title ? `${title} (Photos)` : "Instagram Photos",
+      kind: "photos",
+    });
 
     if (!url.trim() || !baseUrl || isSaving) return;
     try {
@@ -726,7 +804,15 @@ export function useInstagramController() {
       });
       throw e;
     }
-  }, [metadata, startDownloadUi, url, baseUrl, isSaving, downloadPhotosMutation, setUi]);
+  }, [
+    metadata,
+    startDownloadUi,
+    url,
+    baseUrl,
+    isSaving,
+    downloadPhotosMutation,
+    setUi,
+  ]);
 
   const onTogglePauseOrSave = useCallback(async () => {
     if (downloadPercent >= 100 && isDownloadReadyToSave) {
@@ -748,7 +834,11 @@ export function useInstagramController() {
     }
 
     await t.pauseAsync();
-    setUi({ isDownloadPaused: true, downloadPillText: "Paused", downloadSubText: null });
+    setUi({
+      isDownloadPaused: true,
+      downloadPillText: "Paused",
+      downloadSubText: null,
+    });
   }, [
     downloadPercent,
     isDownloadReadyToSave,
@@ -766,7 +856,13 @@ export function useInstagramController() {
     metadata,
     videoInfo,
     errorText,
-    history: history.data ?? [],
+    history: historyItems,
+    coverWidth,
+    coverPhotoIndex,
+    isConfirmClearOpen,
+    openConfirmClearHistory,
+    closeConfirmClearHistory,
+    onConfirmClearHistory,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,
@@ -784,15 +880,18 @@ export function useInstagramController() {
     isDownloadPaused,
     isDownloadReadyToSave,
     isDownloadSuccessOpen,
-    onClearHistory,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
     onPaste,
+    onCoverLayout,
+    onCoverPhotoScrollEnd,
     onFetchResult,
     onPreview,
     onDownloadVideoMp4,
     onDownloadPhotos,
     onTogglePauseOrSave,
+    onOpenInstagramApp,
+    onShareDownloaded,
   };
 }

@@ -81,6 +81,7 @@ const MAPPING = {
   "brand.instagram": "photo-camera",
   "brand.facebook": "facebook",
   "brand.youtube": "play-circle-filled",
+  trash: "delete",
 } as IconMapping;
 
 export function IconSymbol({
