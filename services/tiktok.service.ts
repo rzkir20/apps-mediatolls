@@ -50,6 +50,7 @@ function getDefaultUiState(): TiktokUiState {
     downloadTotalText: null,
     isDownloadPaused: false,
     isDownloadReadyToSave: false,
+    isDownloadSuccessOpen: false,
   };
 }
 
@@ -148,6 +149,7 @@ export function useTiktokController() {
   const downloadTotalText = ui.data.downloadTotalText;
   const isDownloadPaused = ui.data.isDownloadPaused;
   const isDownloadReadyToSave = ui.data.isDownloadReadyToSave;
+  const isDownloadSuccessOpen = ui.data.isDownloadSuccessOpen;
 
   const setUi = useCallback(
     (patch: Partial<TiktokUiState>) => {
@@ -436,6 +438,10 @@ export function useTiktokController() {
     });
   }, [setUi]);
 
+  const closeDownloadSuccessModal = useCallback(() => {
+    setUi({ isDownloadSuccessOpen: false });
+  }, [setUi]);
+
   const downloadSingleMutation = useMutation({
     mutationKey: ["tiktok", "download", "single", baseUrl, url.trim()],
     mutationFn: async (args: { downloadUrl: string; ext: "mp4" | "mp3" }) => {
@@ -620,6 +626,8 @@ export function useTiktokController() {
         saveText: "Berhasil disimpan ke Gallery.",
         downloadPillText: "Completed",
         downloadSubText: "Saved to Gallery",
+        isDownloadOpen: false,
+        isDownloadSuccessOpen: true,
       });
     },
     onError: (e) => {
@@ -773,6 +781,7 @@ export function useTiktokController() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     canFetch,
     onPreviewLayout,
     onCoverLayout,
@@ -781,6 +790,7 @@ export function useTiktokController() {
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,

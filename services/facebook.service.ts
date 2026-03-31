@@ -21,7 +21,11 @@ const HISTORY_LIMIT = 30;
 const PLATFORM = "facebook";
 
 function getPreviewCacheUri(cacheDir: string, requestUrl: string) {
-  const key = encodeURIComponent(requestUrl).replace(/%/g, "").slice(0, 120);
+  let hash = 5381;
+  for (let i = 0; i < requestUrl.length; i += 1) {
+    hash = (hash * 33) ^ requestUrl.charCodeAt(i);
+  }
+  const key = (hash >>> 0).toString(16);
   return `${cacheDir}preview-facebook-${key}.mp4`;
 }
 
@@ -31,6 +35,8 @@ function getDefaultUiState(): FacebookUiState {
 
     isPreviewOpen: false,
     previewUrl: null,
+    previewLoadPercent: 0,
+    previewLoadText: null,
     saveText: null,
 
     isDownloadOpen: false,
@@ -45,6 +51,7 @@ function getDefaultUiState(): FacebookUiState {
 
     isDownloadPaused: false,
     isDownloadReadyToSave: false,
+    isDownloadSuccessOpen: false,
   };
 }
 
@@ -157,6 +164,8 @@ export function useFacebookController() {
   const url = ui.data.url;
   const isPreviewOpen = ui.data.isPreviewOpen;
   const previewUrl = ui.data.previewUrl;
+  const previewLoadPercent = ui.data.previewLoadPercent;
+  const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
 
   const isDownloadOpen = ui.data.isDownloadOpen;
@@ -169,6 +178,7 @@ export function useFacebookController() {
   const downloadTotalText = ui.data.downloadTotalText;
   const isDownloadPaused = ui.data.isDownloadPaused;
   const isDownloadReadyToSave = ui.data.isDownloadReadyToSave;
+  const isDownloadSuccessOpen = ui.data.isDownloadSuccessOpen;
 
   const setUi = useCallback(
     (patch: Partial<FacebookUiState>) => {
@@ -315,7 +325,13 @@ export function useFacebookController() {
     if (fromRef) {
       const fileInfo = await FileSystem.getInfoAsync(fromRef);
       if (fileInfo.exists && !fileInfo.isDirectory) {
-        setUi({ previewUrl: fromRef, isPreviewOpen: true, saveText: null });
+        setUi({
+          previewUrl: fromRef,
+          isPreviewOpen: true,
+          previewLoadPercent: 100,
+          previewLoadText: "Siap diputar (cache)",
+          saveText: null,
+        });
         return;
       }
       delete previewCacheRef.current[cacheKey];
@@ -325,7 +341,13 @@ export function useFacebookController() {
     const cachedInfo = await FileSystem.getInfoAsync(previewUri);
     if (cachedInfo.exists && !cachedInfo.isDirectory) {
       previewCacheRef.current[cacheKey] = previewUri;
-      setUi({ previewUrl: previewUri, isPreviewOpen: true, saveText: null });
+      setUi({
+        previewUrl: previewUri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar (cache)",
+        saveText: null,
+      });
       return;
     }
 
@@ -333,34 +355,71 @@ export function useFacebookController() {
     const requestId = previewRequestIdRef.current;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ previewUrl: null, isPreviewOpen: true, saveText: null });
+    setUi({
+      previewUrl: null,
+      isPreviewOpen: true,
+      previewLoadPercent: 0,
+      previewLoadText: "Menghubungi server...",
+      saveText: null,
+    });
     try {
-      const task = FileSystem.createDownloadResumable(info.previewVideoUrl, previewUri, {
-        cache: true,
-      });
+      const task = FileSystem.createDownloadResumable(
+        info.previewVideoUrl,
+        previewUri,
+        { cache: true },
+        (p) => {
+          if (previewRequestIdRef.current !== requestId) return;
+          const written = p.totalBytesWritten ?? 0;
+          const expected = p.totalBytesExpectedToWrite ?? 0;
+          if (expected > 0) {
+            const pct = Math.round((written / expected) * 100);
+            setUi({
+              previewLoadPercent: Math.max(0, Math.min(99, pct)),
+              previewLoadText: "Mengunduh preview...",
+            });
+            return;
+          }
+          qc.setQueryData<FacebookUiState>(uiKey, (prev) => {
+            const current = prev ?? getDefaultUiState();
+            return {
+              ...current,
+              previewLoadPercent: Math.min(95, current.previewLoadPercent + 2),
+              previewLoadText: "Mengunduh preview...",
+            };
+          });
+        },
+      );
       previewDownloadRef.current = task;
       const file = await task.downloadAsync();
       if (previewRequestIdRef.current !== requestId) return;
       if (!file?.uri) throw new Error("Gagal menyiapkan preview video");
       previewCacheRef.current[cacheKey] = file.uri;
-      setUi({ previewUrl: file.uri, isPreviewOpen: true, saveText: null });
+      setUi({
+        previewUrl: file.uri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar",
+        saveText: null,
+      });
     } catch (e) {
       if (previewRequestIdRef.current !== requestId) return;
       setUi({
         isPreviewOpen: false,
         previewUrl: null,
+        previewLoadPercent: 0,
+        previewLoadText: null,
         saveText: getErrorMessage(e, "Gagal memuat preview video"),
       });
     } finally {
       if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
     }
-  }, [url, baseUrl, videoInfo, setUi]);
+  }, [url, baseUrl, videoInfo, qc, setUi]);
 
   const closePreview = useCallback(() => {
     previewRequestIdRef.current += 1;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ isPreviewOpen: false });
+    setUi({ isPreviewOpen: false, previewLoadPercent: 0, previewLoadText: null });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -375,6 +434,10 @@ export function useFacebookController() {
       isDownloadPaused: false,
       isDownloadReadyToSave: false,
     });
+  }, [setUi]);
+
+  const closeDownloadSuccessModal = useCallback(() => {
+    setUi({ isDownloadSuccessOpen: false });
   }, [setUi]);
 
   const downloadSingleMutation = useMutation({
@@ -512,6 +575,8 @@ export function useFacebookController() {
         saveText: "Berhasil disimpan ke Gallery.",
         downloadPillText: "Completed",
         downloadSubText: "Saved to Gallery",
+        isDownloadOpen: false,
+        isDownloadSuccessOpen: true,
       });
     },
     onError: (e) => {
@@ -539,6 +604,7 @@ export function useFacebookController() {
         downloadTotalText: null,
         isDownloadPaused: false,
         isDownloadReadyToSave: false,
+        isDownloadSuccessOpen: false,
       });
     },
     [setUi],
@@ -623,6 +689,8 @@ export function useFacebookController() {
     history: history.data ?? [],
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     isDownloadOpen,
@@ -635,9 +703,11 @@ export function useFacebookController() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,

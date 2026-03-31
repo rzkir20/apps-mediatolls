@@ -4,10 +4,13 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
+import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
 import {
   Linking,
   Pressable,
   ScrollView,
+  Share,
   Text,
   TextInput,
   View,
@@ -77,6 +80,8 @@ export default function YoutubeScreen() {
     history,
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     selectedFormatIndex,
@@ -91,9 +96,11 @@ export default function YoutubeScreen() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,
@@ -119,6 +126,17 @@ export default function YoutubeScreen() {
       }
     }
     await Linking.openURL("https://www.youtube.com/");
+  };
+
+  const onShareDownloaded = async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
   };
 
   return (
@@ -149,11 +167,29 @@ export default function YoutubeScreen() {
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
       />
+      <DownloadSuccessModal
+        visible={isDownloadSuccessOpen}
+        fileName={downloadFileName}
+        sizeText={downloadTotalText ?? undefined}
+        speedText={downloadSpeedText ?? undefined}
+        durationText={downloadRemainingText ?? "00:00"}
+        formatText={
+          downloadFileName.toLowerCase().includes("mp3") ? "MP3" : "MP4"
+        }
+        primaryActionLabel="Tutup"
+        secondaryActionLabel="Bagikan"
+        onPrimaryAction={closeDownloadSuccessModal}
+        onSecondaryAction={onShareDownloaded}
+        onBack={closeDownloadSuccessModal}
+        onRequestClose={closeDownloadSuccessModal}
+      />
 
       <DialogYoutube
         isOpen={isPreviewOpen}
         onClose={closePreview}
         previewUrl={previewUrl}
+        previewLoadPercent={previewLoadPercent}
+        previewLoadText={previewLoadText}
         audioAvailable={audioAvailable}
         isSaving={isSaving}
         saveText={saveText}
@@ -273,30 +309,28 @@ export default function YoutubeScreen() {
                   ),
                 )}
               </View>
-              {SUPPORTED_FORMAT_CARDS.filter((c) => c.fullWidth).map(
-                (card) => (
-                  <View
-                    key={card.title}
-                    className="flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
-                  >
-                    <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
-                      <IconSymbol
-                        name={card.icon}
-                        size={20}
-                        color={socialPalette.accent}
-                      />
-                    </View>
-                    <View className="flex-1 min-w-0">
-                      <Text className="text-xs font-bold text-white">
-                        {card.title}
-                      </Text>
-                      <Text className="text-[10px] text-social-slate-500 mt-0.5">
-                        {card.sub}
-                      </Text>
-                    </View>
+              {SUPPORTED_FORMAT_CARDS.filter((c) => c.fullWidth).map((card) => (
+                <View
+                  key={card.title}
+                  className="flex-row items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/5"
+                >
+                  <View className="w-8 h-8 rounded-lg bg-social-accent-faint items-center justify-center">
+                    <IconSymbol
+                      name={card.icon}
+                      size={20}
+                      color={socialPalette.accent}
+                    />
                   </View>
-                ),
-              )}
+                  <View className="flex-1 min-w-0">
+                    <Text className="text-xs font-bold text-white">
+                      {card.title}
+                    </Text>
+                    <Text className="text-[10px] text-social-slate-500 mt-0.5">
+                      {card.sub}
+                    </Text>
+                  </View>
+                </View>
+              ))}
             </View>
 
             {!!errorText && (
@@ -380,7 +414,8 @@ export default function YoutubeScreen() {
                                       }
                                     : {
                                         borderColor: "rgba(255,255,255,0.15)",
-                                        backgroundColor: "rgba(255,255,255,0.05)",
+                                        backgroundColor:
+                                          "rgba(255,255,255,0.05)",
                                       }
                                 }
                               >
@@ -422,11 +457,7 @@ export default function YoutubeScreen() {
                         className="px-4 py-2 rounded-full bg-social-accent active:opacity-90 flex-row items-center gap-2"
                         style={{ opacity: isSaving || !videoInfo ? 0.6 : 1 }}
                       >
-                        <IconSymbol
-                          name="arrow.down"
-                          size={18}
-                          color="#fff"
-                        />
+                        <IconSymbol name="arrow.down" size={18} color="#fff" />
                         <Text className="text-white text-[10px] font-black tracking-widest uppercase">
                           {isSaving ? "Saving..." : "Save MP4"}
                         </Text>
@@ -515,11 +546,7 @@ export default function YoutubeScreen() {
                       )}
                       {!!item.cover ? (
                         <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                          <IconSymbol
-                            name={typeIcon}
-                            size={12}
-                            color="#fff"
-                          />
+                          <IconSymbol name={typeIcon} size={12} color="#fff" />
                         </View>
                       ) : null}
                     </View>

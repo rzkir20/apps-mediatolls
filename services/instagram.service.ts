@@ -45,6 +45,7 @@ type InstagramUiState = {
 
   isDownloadPaused: boolean;
   isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
 };
 
 function getDefaultUiState(): InstagramUiState {
@@ -69,6 +70,7 @@ function getDefaultUiState(): InstagramUiState {
 
     isDownloadPaused: false,
     isDownloadReadyToSave: false,
+    isDownloadSuccessOpen: false,
   };
 }
 
@@ -195,6 +197,7 @@ export function useInstagramController() {
   const downloadTotalText = ui.data.downloadTotalText;
   const isDownloadPaused = ui.data.isDownloadPaused;
   const isDownloadReadyToSave = ui.data.isDownloadReadyToSave;
+  const isDownloadSuccessOpen = ui.data.isDownloadSuccessOpen;
 
   const setUi = useCallback(
     (patch: Partial<InstagramUiState>) => {
@@ -461,6 +464,10 @@ export function useInstagramController() {
     });
   }, [setUi]);
 
+  const closeDownloadSuccessModal = useCallback(() => {
+    setUi({ isDownloadSuccessOpen: false });
+  }, [setUi]);
+
   const downloadSingleMutation = useMutation({
     mutationKey: ["instagram", "download", "single", baseUrl, url.trim()],
     mutationFn: async (args: { downloadUrl: string; ext: "mp4" | "jpg" }) => {
@@ -642,6 +649,8 @@ export function useInstagramController() {
         saveText: "Berhasil disimpan ke Gallery.",
         downloadPillText: "Completed",
         downloadSubText: "Saved to Gallery",
+        isDownloadOpen: false,
+        isDownloadSuccessOpen: true,
       });
     },
     onError: (e) => {
@@ -670,6 +679,7 @@ export function useInstagramController() {
         downloadTotalText: null,
         isDownloadPaused: false,
         isDownloadReadyToSave: false,
+        isDownloadSuccessOpen: false,
       });
     },
     [setUi],
@@ -773,9 +783,11 @@ export function useInstagramController() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,

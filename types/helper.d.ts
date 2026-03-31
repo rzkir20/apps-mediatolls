@@ -18,6 +18,14 @@ type HistoryItem = {
   date: number;
 };
 
+//============================ Bottom Sheets ============================//
+interface BottomSheetsProps {
+  visible: boolean;
+  onClose: () => void;
+  title?: string;
+  children: React.ReactNode;
+}
+
 //======================= Download Progress Modal Types =======================//
 type DownloadProgressMetadataItem = {
   label: string;
@@ -49,6 +57,28 @@ type DownloadProgressModalProps = {
   onPause?: () => void;
   onCancel?: () => void;
 
+  onRequestClose?: () => void;
+};
+
+type DownloadSuccessModalProps = {
+  visible: boolean;
+
+  title?: string;
+  message?: string;
+  fileName: string;
+  sizeText?: string;
+  qualityText?: string;
+  speedText?: string;
+  durationText?: string;
+  formatText?: string;
+
+  primaryActionLabel?: string;
+  secondaryActionLabel?: string;
+  backLabel?: string;
+
+  onPrimaryAction?: () => void;
+  onSecondaryAction?: () => void;
+  onBack?: () => void;
   onRequestClose?: () => void;
 };
 
@@ -87,6 +117,7 @@ type TiktokUiState = {
 
   isDownloadPaused: boolean;
   isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
 };
 
 //======================= Tiktok Dialog Types =======================//
@@ -133,6 +164,8 @@ type DialogYoutubeProps = {
   onClose: () => void;
 
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   audioAvailable: boolean;
   isSaving: boolean;
   saveText: string | null;
@@ -147,6 +180,8 @@ type DialogFacebookProps = {
   onClose: () => void;
 
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   isSaving: boolean;
   saveText: string | null;
 
@@ -159,6 +194,8 @@ type FacebookUiState = {
 
   isPreviewOpen: boolean;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   saveText: string | null;
 
   isDownloadOpen: boolean;
@@ -173,6 +210,7 @@ type FacebookUiState = {
 
   isDownloadPaused: boolean;
   isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
 };
 
 //======================= Social Header Types =======================//

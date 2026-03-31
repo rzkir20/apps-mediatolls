@@ -30,6 +30,8 @@ type YoutubeUiState = {
 
   isPreviewOpen: boolean;
   previewUrl: string | null;
+  previewLoadPercent: number;
+  previewLoadText: string | null;
   saveText: string | null;
 
   selectedFormatIndex: number;
@@ -46,6 +48,7 @@ type YoutubeUiState = {
 
   isDownloadPaused: boolean;
   isDownloadReadyToSave: boolean;
+  isDownloadSuccessOpen: boolean;
 };
 
 function getDefaultUiState(): YoutubeUiState {
@@ -54,6 +57,8 @@ function getDefaultUiState(): YoutubeUiState {
 
     isPreviewOpen: false,
     previewUrl: null,
+    previewLoadPercent: 0,
+    previewLoadText: null,
     saveText: null,
 
     selectedFormatIndex: 0,
@@ -70,6 +75,7 @@ function getDefaultUiState(): YoutubeUiState {
 
     isDownloadPaused: false,
     isDownloadReadyToSave: false,
+    isDownloadSuccessOpen: false,
   };
 }
 
@@ -206,6 +212,8 @@ export function useYoutubeController() {
   const url = ui.data.url;
   const isPreviewOpen = ui.data.isPreviewOpen;
   const previewUrl = ui.data.previewUrl;
+  const previewLoadPercent = ui.data.previewLoadPercent;
+  const previewLoadText = ui.data.previewLoadText;
   const saveText = ui.data.saveText;
   const selectedFormatIndex = ui.data.selectedFormatIndex;
 
@@ -219,6 +227,7 @@ export function useYoutubeController() {
   const downloadTotalText = ui.data.downloadTotalText;
   const isDownloadPaused = ui.data.isDownloadPaused;
   const isDownloadReadyToSave = ui.data.isDownloadReadyToSave;
+  const isDownloadSuccessOpen = ui.data.isDownloadSuccessOpen;
 
   const setUi = useCallback(
     (patch: Partial<YoutubeUiState>) => {
@@ -283,9 +292,33 @@ export function useYoutubeController() {
   );
 
   const onClearHistory = useCallback(async () => {
+    previewRequestIdRef.current += 1;
+    previewDownloadRef.current?.cancelAsync().catch(() => {});
+    previewDownloadRef.current = null;
+
+    const cachedPreviewUris = Array.from(
+      new Set(Object.values(previewCacheRef.current)),
+    ).filter(Boolean);
+    previewCacheRef.current = {};
+
+    if (cachedPreviewUris.length) {
+      await Promise.allSettled(
+        cachedPreviewUris.map((uri) =>
+          FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {}),
+        ),
+      );
+    }
+
     qc.setQueryData<HistoryItem[]>(historyKey, []);
     await AsyncStorage.removeItem(STORAGE_KEY_YOUTUBE_HISTORY);
-  }, [qc]);
+    setUi({
+      isPreviewOpen: false,
+      previewUrl: null,
+      previewLoadPercent: 0,
+      previewLoadText: null,
+      saveText: null,
+    });
+  }, [qc, setUi]);
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
@@ -392,7 +425,13 @@ export function useYoutubeController() {
     if (fromRef) {
       const info = await FileSystem.getInfoAsync(fromRef);
       if (info.exists && !info.isDirectory) {
-        setUi({ previewUrl: fromRef, isPreviewOpen: true, saveText: null });
+        setUi({
+          previewUrl: fromRef,
+          isPreviewOpen: true,
+          previewLoadPercent: 100,
+          previewLoadText: "Siap diputar (cache)",
+          saveText: null,
+        });
         return;
       }
       delete previewCacheRef.current[cacheKey];
@@ -402,7 +441,13 @@ export function useYoutubeController() {
     const cachedInfo = await FileSystem.getInfoAsync(previewUri);
     if (cachedInfo.exists && !cachedInfo.isDirectory) {
       previewCacheRef.current[cacheKey] = previewUri;
-      setUi({ previewUrl: previewUri, isPreviewOpen: true, saveText: null });
+      setUi({
+        previewUrl: previewUri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar (cache)",
+        saveText: null,
+      });
       return;
     }
 
@@ -410,32 +455,71 @@ export function useYoutubeController() {
     const requestId = previewRequestIdRef.current;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ previewUrl: null, isPreviewOpen: true, saveText: null });
+    setUi({
+      previewUrl: null,
+      isPreviewOpen: true,
+      previewLoadPercent: 0,
+      previewLoadText: "Menghubungi server...",
+      saveText: null,
+    });
     try {
-      const task = FileSystem.createDownloadResumable(u, previewUri, { cache: true });
+      const task = FileSystem.createDownloadResumable(
+        u,
+        previewUri,
+        { cache: true },
+        (p) => {
+          if (previewRequestIdRef.current !== requestId) return;
+          const written = p.totalBytesWritten ?? 0;
+          const expected = p.totalBytesExpectedToWrite ?? 0;
+          if (expected > 0) {
+            const pct = Math.round((written / expected) * 100);
+            setUi({
+              previewLoadPercent: Math.max(0, Math.min(99, pct)),
+              previewLoadText: "Mengunduh preview...",
+            });
+            return;
+          }
+          qc.setQueryData<YoutubeUiState>(uiKey, (prev) => {
+            const current = prev ?? getDefaultUiState();
+            return {
+              ...current,
+              previewLoadPercent: Math.min(95, current.previewLoadPercent + 2),
+              previewLoadText: "Mengunduh preview...",
+            };
+          });
+        },
+      );
       previewDownloadRef.current = task;
       const file = await task.downloadAsync();
       if (previewRequestIdRef.current !== requestId) return;
       if (!file?.uri) throw new Error("Gagal menyiapkan preview video");
       previewCacheRef.current[cacheKey] = file.uri;
-      setUi({ previewUrl: file.uri, isPreviewOpen: true, saveText: null });
+      setUi({
+        previewUrl: file.uri,
+        isPreviewOpen: true,
+        previewLoadPercent: 100,
+        previewLoadText: "Siap diputar",
+        saveText: null,
+      });
     } catch (e) {
       if (previewRequestIdRef.current !== requestId) return;
       setUi({
         isPreviewOpen: false,
         previewUrl: null,
+        previewLoadPercent: 0,
+        previewLoadText: null,
         saveText: getErrorMessage(e, "Gagal memuat preview video"),
       });
     } finally {
       if (previewRequestIdRef.current === requestId) previewDownloadRef.current = null;
     }
-  }, [url, baseUrl, videoInfo, selectedFormatIndex, setUi]);
+  }, [url, baseUrl, videoInfo, selectedFormatIndex, qc, setUi]);
 
   const closePreview = useCallback(() => {
     previewRequestIdRef.current += 1;
     previewDownloadRef.current?.cancelAsync().catch(() => {});
     previewDownloadRef.current = null;
-    setUi({ isPreviewOpen: false });
+    setUi({ isPreviewOpen: false, previewLoadPercent: 0, previewLoadText: null });
   }, [setUi]);
 
   const closeDownloadModal = useCallback(() => {
@@ -451,6 +535,10 @@ export function useYoutubeController() {
       isDownloadPaused: false,
       isDownloadReadyToSave: false,
     });
+  }, [setUi]);
+
+  const closeDownloadSuccessModal = useCallback(() => {
+    setUi({ isDownloadSuccessOpen: false });
   }, [setUi]);
 
   const downloadSingleMutation = useMutation({
@@ -581,6 +669,8 @@ export function useYoutubeController() {
         saveText: "Berhasil disimpan ke Gallery.",
         downloadPillText: "Completed",
         downloadSubText: "Saved to Gallery",
+        isDownloadOpen: false,
+        isDownloadSuccessOpen: true,
       });
     },
     onError: (e) => {
@@ -609,6 +699,7 @@ export function useYoutubeController() {
         downloadTotalText: null,
         isDownloadPaused: false,
         isDownloadReadyToSave: false,
+        isDownloadSuccessOpen: false,
       });
     },
     [setUi],
@@ -730,6 +821,8 @@ export function useYoutubeController() {
     history: history.data ?? [],
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     selectedFormatIndex,
@@ -744,9 +837,11 @@ export function useYoutubeController() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,

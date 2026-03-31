@@ -4,11 +4,14 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
+import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
 import {
   LayoutChangeEvent,
   Linking,
   Pressable,
   ScrollView,
+  Share,
   Text,
   TextInput,
   View,
@@ -81,8 +84,10 @@ export default function InstagramScreen() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,
@@ -121,6 +126,17 @@ export default function InstagramScreen() {
     await Linking.openURL("https://www.instagram.com/");
   };
 
+  const onShareDownloaded = async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  };
+
   return (
     <View className="flex-1 bg-social-bg">
       <DownloadProgressModal
@@ -148,6 +164,20 @@ export default function InstagramScreen() {
         onPause={onTogglePauseOrSave}
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
+      />
+      <DownloadSuccessModal
+        visible={isDownloadSuccessOpen}
+        fileName={downloadFileName}
+        sizeText={downloadTotalText ?? undefined}
+        speedText={downloadSpeedText ?? undefined}
+        durationText={downloadRemainingText ?? "00:00"}
+        formatText={downloadFileName.toLowerCase().includes("photo") ? "JPG/PNG" : "MP4"}
+        primaryActionLabel="Tutup"
+        secondaryActionLabel="Bagikan"
+        onPrimaryAction={closeDownloadSuccessModal}
+        onSecondaryAction={onShareDownloaded}
+        onBack={closeDownloadSuccessModal}
+        onRequestClose={closeDownloadSuccessModal}
       />
 
       <DialogInstagram

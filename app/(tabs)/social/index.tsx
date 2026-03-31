@@ -4,6 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
+import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
 import {
   Pressable,
   ScrollView,
@@ -11,6 +13,7 @@ import {
   TextInput,
   View,
   Linking,
+  Share,
 } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -72,8 +75,10 @@ export default function HomeScreen() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,
@@ -104,6 +109,17 @@ export default function HomeScreen() {
     await Linking.openURL("https://www.tiktok.com/");
   };
 
+  const onShareDownloaded = async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
+  };
+
   return (
     <View className="flex-1 bg-social-bg">
       <DownloadProgressModal
@@ -131,6 +147,22 @@ export default function HomeScreen() {
         onPause={onTogglePauseOrSave}
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
+      />
+      <DownloadSuccessModal
+        visible={isDownloadSuccessOpen}
+        fileName={downloadFileName}
+        sizeText={downloadTotalText ?? undefined}
+        speedText={downloadSpeedText ?? undefined}
+        durationText={downloadRemainingText ?? "00:00"}
+        formatText={
+          downloadFileName.toLowerCase().includes(".mp3") ? "MP3" : "MP4"
+        }
+        primaryActionLabel="Tutup"
+        secondaryActionLabel="Bagikan"
+        onPrimaryAction={closeDownloadSuccessModal}
+        onSecondaryAction={onShareDownloaded}
+        onBack={closeDownloadSuccessModal}
+        onRequestClose={closeDownloadSuccessModal}
       />
 
       <DialogTiktok

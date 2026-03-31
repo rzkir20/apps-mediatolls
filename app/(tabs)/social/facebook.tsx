@@ -4,10 +4,13 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
+import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
 import {
   Linking,
   Pressable,
   ScrollView,
+  Share,
   Text,
   TextInput,
   View,
@@ -64,6 +67,8 @@ export default function FacebookScreen() {
     history,
     isPreviewOpen,
     previewUrl,
+    previewLoadPercent,
+    previewLoadText,
     isSaving,
     saveText,
     isDownloadOpen,
@@ -76,9 +81,11 @@ export default function FacebookScreen() {
     downloadTotalText,
     isDownloadPaused,
     isDownloadReadyToSave,
+    isDownloadSuccessOpen,
     onClearHistory,
     closePreview,
     closeDownloadModal,
+    closeDownloadSuccessModal,
     onPaste,
     onFetchResult,
     onPreview,
@@ -102,6 +109,17 @@ export default function FacebookScreen() {
       }
     }
     await Linking.openURL("https://www.facebook.com/");
+  };
+
+  const onShareDownloaded = async () => {
+    const shareText =
+      saveText?.trim() ||
+      `Download selesai: ${downloadFileName || "Media dari Media Tools"}`;
+    try {
+      await Share.share({ message: shareText });
+    } catch {
+      // noop
+    }
   };
 
   return (
@@ -132,11 +150,27 @@ export default function FacebookScreen() {
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
       />
+      <DownloadSuccessModal
+        visible={isDownloadSuccessOpen}
+        fileName={downloadFileName}
+        sizeText={downloadTotalText ?? undefined}
+        speedText={downloadSpeedText ?? undefined}
+        durationText={downloadRemainingText ?? "00:00"}
+        formatText="MP4"
+        primaryActionLabel="Tutup"
+        secondaryActionLabel="Bagikan"
+        onPrimaryAction={closeDownloadSuccessModal}
+        onSecondaryAction={onShareDownloaded}
+        onBack={closeDownloadSuccessModal}
+        onRequestClose={closeDownloadSuccessModal}
+      />
 
       <DialogFacebook
         isOpen={isPreviewOpen}
         onClose={closePreview}
         previewUrl={previewUrl}
+        previewLoadPercent={previewLoadPercent}
+        previewLoadText={previewLoadText}
         isSaving={isSaving}
         saveText={saveText}
         onDownloadVideoMp4={onDownloadVideoMp4}

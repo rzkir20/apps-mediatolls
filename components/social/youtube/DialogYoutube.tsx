@@ -16,6 +16,8 @@ export function DialogYoutube({
   isOpen,
   onClose,
   previewUrl,
+  previewLoadPercent,
+  previewLoadText,
   audioAvailable,
   isSaving,
   saveText,
@@ -97,8 +99,8 @@ export function DialogYoutube({
         <PreviewVideo uri={previewUrl} isVisible={isOpen} />
       ) : (
         <LoadingMediaPlayer
-          progressPercent={0}
-          statusText={saveText ?? "Menyiapkan preview..."}
+          progressPercent={previewLoadPercent}
+          statusText={previewLoadText ?? saveText ?? "Menyiapkan preview..."}
         />
       )}
     </Dialog>

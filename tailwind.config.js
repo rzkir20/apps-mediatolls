@@ -4,7 +4,7 @@ const { hairlineWidth, platformSelect } = require('nativewind/theme');
 
 const jiti = require('jiti')(path.resolve(process.cwd(), 'tailwind.config.js'));
 
-const { socialPalette } = jiti('./lib/pallate.ts');
+const { socialPalette, bottomSheet } = jiti('./lib/pallate.ts');
 
   /** @type {import('tailwindcss').Config} */
   module.exports = {
@@ -35,6 +35,21 @@ const { socialPalette } = jiti('./lib/pallate.ts');
             },
             'card-from': socialPalette.cardFrom,
             'accent-faint': socialPalette.accentFaint,
+            'doc-pdf': socialPalette.docPdf,
+            'doc-pdf-bg': socialPalette.docPdfBg,
+            'doc-word': socialPalette.docWord,
+            'doc-word-bg': socialPalette.docWordBg,
+            'doc-excel': socialPalette.docExcel,
+            'doc-excel-bg': socialPalette.docExcelBg,
+            'doc-ppt': socialPalette.docPpt,
+            'doc-ppt-bg': socialPalette.docPptBg,
+            'doc-image': socialPalette.docImage,
+            'doc-image-bg': socialPalette.docImageBg,
+            /** Bottom sheet / modal — synced with `bottomSheet` in pallate + BlurView */
+            'sheet-scrim': bottomSheet.backdrop,
+            'sheet-overlay': bottomSheet.surfaceOverlay,
+            'sheet-border': 'rgba(255, 255, 255, 0.08)',
+            'sheet-handle': socialPalette.slate600,
           },
         },
         borderWidth: {

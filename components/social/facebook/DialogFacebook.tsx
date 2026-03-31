@@ -18,6 +18,8 @@ export function DialogFacebook({
   isOpen,
   onClose,
   previewUrl,
+  previewLoadPercent,
+  previewLoadText,
   isSaving,
   saveText,
   onDownloadVideoMp4,
@@ -65,11 +67,11 @@ export function DialogFacebook({
       }
     >
       {!!previewUrl ? (
-        <PreviewVideo uri={previewUrl} isVisible={isOpen} />
+        <PreviewVideo key={previewUrl} uri={previewUrl} isVisible={isOpen} />
       ) : (
         <LoadingMediaPlayer
-          progressPercent={0}
-          statusText={saveText ?? "Menyiapkan preview..."}
+          progressPercent={previewLoadPercent}
+          statusText={previewLoadText ?? saveText ?? "Menyiapkan preview..."}
         />
       )}
     </Dialog>
