@@ -18,7 +18,7 @@ import { PLATFORM_TABS, isPlatformActive } from "@/components/ui/helper";
 
 export function Header({
   title = "MEDIA TOOLS",
-  onPressProfile,
+  onPressSystem,
 }: SocialHeaderProps) {
   const router = useRouter();
   const pathname = usePathname() ?? "";
@@ -34,6 +34,11 @@ export function Header({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  };
+
+  const handlePressSystem = () => {
+    router.push("/system");
+    onPressSystem?.();
   };
 
   return (
@@ -55,14 +60,10 @@ export function Header({
         </View>
 
         <Pressable
-          onPress={onPressProfile}
+          onPress={handlePressSystem}
           className="w-10 h-10 rounded-full border border-white/10 items-center justify-center bg-white/5 active:opacity-80"
         >
-          <IconSymbol
-            name="person.circle"
-            size={22}
-            color="rgba(255,255,255,0.7)"
-          />
+          <IconSymbol name="devices" size={22} color="rgba(255,255,255,0.7)" />
         </Pressable>
       </View>
 

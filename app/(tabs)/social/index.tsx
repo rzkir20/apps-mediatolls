@@ -9,6 +9,7 @@ import { DownloadSuccessModal } from "@/components/ui/download-succes";
 import { useState } from "react";
 
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -21,9 +22,11 @@ import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
 
 import { SupportedFormatCards } from "@/components/ui/card";
 
-import { historyTypeIconName, FORMAT_BADGES } from "@/components/ui/helper";
+import { FORMAT_BADGES } from "@/components/ui/helper";
 
 import { DeleteConfirmModal } from "@/components/ui/delete";
+
+import { HistoryCard } from "@/components/ui/history-card";
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -463,60 +466,15 @@ export default function HomeScreen() {
           </View>
           {history?.length ? (
             <View className="flex flex-col gap-3">
-              {history.slice(0, 10).map((item) => {
-                const typeIcon = historyTypeIconName(item.type);
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => setUrl(item.url)}
-                    className="flex-row items-center gap-3 p-3 rounded-3xl bg-white/5 border border-white/10 active:opacity-90"
-                  >
-                    <View className="w-14 h-14 rounded-2xl overflow-hidden bg-black/40 border border-white/10 relative">
-                      {!!item.cover ? (
-                        <Image
-                          source={{ uri: item.cover }}
-                          style={{ width: "100%", height: "100%" }}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View className="flex-1 items-center justify-center">
-                          <IconSymbol
-                            name={typeIcon}
-                            size={22}
-                            color={socialPalette.slate500}
-                          />
-                        </View>
-                      )}
-                      {!!item.cover ? (
-                        <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                          <IconSymbol name={typeIcon} size={12} color="#fff" />
-                        </View>
-                      ) : null}
-                    </View>
-
-                    <View className="flex-1">
-                      <Text
-                        className="text-white font-extrabold text-xs"
-                        numberOfLines={2}
-                      >
-                        {item.title}
-                      </Text>
-                      <Text
-                        className="text-social-slate-500 text-[10px] mt-1 font-semibold"
-                        numberOfLines={1}
-                      >
-                        {item.author || item.type}
-                      </Text>
-                    </View>
-
-                    <IconSymbol
-                      name="arrow.right"
-                      size={18}
-                      color="rgba(255,255,255,0.35)"
-                    />
-                  </Pressable>
-                );
-              })}
+              {history.slice(0, 10).map((item) => (
+                <HistoryCard
+                  key={item.id}
+                  item={item}
+                  onPress={() => setUrl(item.url)}
+                  chevronIconName="arrow.right"
+                  thumbnailVariant="sm"
+                />
+              ))}
             </View>
           ) : (
             <View className="border-2 border-dashed border-white/5 rounded-3xl py-10 items-center justify-center">

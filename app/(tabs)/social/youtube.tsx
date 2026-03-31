@@ -31,12 +31,10 @@ import { SupportedFormatCards } from "@/components/ui/card";
 
 import { useYoutubeController } from "@/services/youtube.service";
 
-import {
-  historyTypeIconName,
-  SUPPORTED_FORMAT_CARDS,
-} from "@/components/ui/helper";
+import { SUPPORTED_FORMAT_CARDS } from "@/components/ui/helper";
 
 import { DeleteConfirmModal } from "@/components/ui/delete";
+import { HistoryCard } from "@/components/ui/history-card";
 
 export default function YoutubeScreen() {
   const insets = useSafeAreaInsets();
@@ -496,79 +494,29 @@ export default function YoutubeScreen() {
           </View>
           {history?.length ? (
             <View className="flex flex-col gap-3">
-              {history.slice(0, 10).map((item) => {
-                const typeIcon = historyTypeIconName(item.type);
-                return (
-                  <Swipeable
-                    key={item.id}
-                    overshootRight={false}
-                    renderRightActions={() => (
-                      <View className="flex-row items-stretch justify-end">
-                        <Pressable
-                          onPress={() => onDeleteHistoryItem(item.id)}
-                          className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
-                          style={{ width: 72 }}
-                        >
-                          <IconSymbol name="trash" size={18} color="#fff" />
-                        </Pressable>
-                      </View>
-                    )}
-                  >
-                    <Pressable
-                      onPress={() => setUrl(item.url)}
-                      className="flex-row items-center gap-3 p-3 rounded-3xl bg-white/5 border border-white/10 active:opacity-90 mr-2"
-                    >
-                      <View className="w-20 h-20 rounded-2xl overflow-hidden bg-black/40 border border-white/10 relative">
-                        {!!item.cover ? (
-                          <Image
-                            source={{ uri: item.cover }}
-                            style={{ width: "100%", height: "100%" }}
-                            contentFit="cover"
-                          />
-                        ) : (
-                          <View className="flex-1 items-center justify-center">
-                            <IconSymbol
-                              name={typeIcon}
-                              size={22}
-                              color={socialPalette.slate500}
-                            />
-                          </View>
-                        )}
-                        {!!item.cover ? (
-                          <View className="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-black/70 border border-white/15 items-center justify-center">
-                            <IconSymbol
-                              name={typeIcon}
-                              size={12}
-                              color="#fff"
-                            />
-                          </View>
-                        ) : null}
-                      </View>
-
-                      <View className="flex-1">
-                        <Text
-                          className="text-white font-extrabold text-xs"
-                          numberOfLines={2}
-                        >
-                          {item.title}
-                        </Text>
-                        <Text
-                          className="text-social-slate-500 text-[10px] mt-1 font-semibold"
-                          numberOfLines={1}
-                        >
-                          {item.author || item.type}
-                        </Text>
-                      </View>
-
-                      <IconSymbol
-                        name="chevron.right"
-                        size={18}
-                        color="rgba(255,255,255,0.35)"
-                      />
-                    </Pressable>
-                  </Swipeable>
-                );
-              })}
+              {history.slice(0, 10).map((item) => (
+                <Swipeable
+                  key={item.id}
+                  overshootRight={false}
+                  renderRightActions={() => (
+                    <View className="flex-row items-stretch justify-end">
+                      <Pressable
+                        onPress={() => onDeleteHistoryItem(item.id)}
+                        className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                        style={{ width: 72 }}
+                      >
+                        <IconSymbol name="trash" size={18} color="#fff" />
+                      </Pressable>
+                    </View>
+                  )}
+                >
+                  <HistoryCard
+                    item={item}
+                    onPress={() => setUrl(item.url)}
+                    containerClassName="mr-2"
+                  />
+                </Swipeable>
+              ))}
             </View>
           ) : (
             <View className="border-2 border-dashed border-white/5 rounded-3xl py-10 items-center justify-center">

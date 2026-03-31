@@ -18,6 +18,25 @@ type HistoryItem = {
   date: number;
 };
 
+type HistoryItemBase = {
+  id: string;
+  type: HistoryItem["type"];
+  url: string;
+  title: string;
+  author?: string | null;
+  cover?: string | null;
+};
+
+type HistoryCardProps = {
+  item: HistoryItemBase;
+  onPress: () => void;
+  onDelete?: () => void;
+  showChevron?: boolean;
+  chevronIconName?: "chevron.right" | "arrow.right";
+  thumbnailVariant?: "lg" | "sm";
+  containerClassName?: string;
+};
+
 //============================ Bottom Sheets ============================//
 interface BottomSheetsProps {
   visible: boolean;
@@ -280,7 +299,7 @@ type DownloadKind = "video" | "audio" | "photos";
 //======================= Social Header Types =======================//
 type SocialHeaderProps = {
   title?: string;
-  onPressProfile?: () => void;
+  onPressSystem?: () => void;
 };
 
 type ErrorShape = { message?: string; error?: string };

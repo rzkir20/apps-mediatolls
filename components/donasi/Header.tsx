@@ -8,7 +8,7 @@ import { socialPalette } from "@/lib/pallate";
 
 export function DonasiHeader({
   title = "DONASI | MEDIA TOOLS",
-  onPressProfile,
+  onPressSystem,
 }: SocialHeaderProps) {
   const logoStyle: ViewStyle = {
     width: 32,
@@ -41,14 +41,10 @@ export function DonasiHeader({
       </View>
 
       <Pressable
-        onPress={onPressProfile}
+        onPress={onPressSystem}
         className="w-10 h-10 rounded-full border border-white/10 items-center justify-center bg-white/5 active:opacity-80"
       >
-        <IconSymbol
-          name="person.circle"
-          size={22}
-          color="rgba(255,255,255,0.7)"
-        />
+        <IconSymbol name="devices" size={22} color="rgba(255,255,255,0.7)" />
       </Pressable>
     </View>
   );
