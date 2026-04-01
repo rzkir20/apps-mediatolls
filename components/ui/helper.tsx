@@ -215,6 +215,12 @@ export const PLATFORM_TABS = [
     path: "/(tabs)/social/youtube" as const,
     icon: "brand.youtube" as const,
   },
+  {
+    id: "threads" as const,
+    label: "THREADS",
+    path: "/(tabs)/social/threads" as const,
+    icon: "layers" as const,
+  },
 ];
 
 export function isPlatformActive(
@@ -222,12 +228,15 @@ export function isPlatformActive(
   id: (typeof PLATFORM_TABS)[number]["id"],
 ) {
   const onInstagram = pathname.includes("/instagram");
-  const onFacebook = pathname.includes("/facebook");
   const onYoutube = pathname.includes("/youtube");
+  const onFacebook = pathname.includes("/facebook");
+  const onThreads = pathname.includes("/threads");
   if (id === "instagram") return onInstagram;
   if (id === "facebook") return onFacebook;
   if (id === "youtube") return onYoutube;
-  if (id === "tiktok") return !onInstagram && !onFacebook && !onYoutube;
+  if (id === "threads") return onThreads;
+  if (id === "tiktok")
+    return !onThreads && !onInstagram && !onFacebook && !onYoutube;
   return false;
 }
 
@@ -294,7 +303,13 @@ export const FORMAT_BADGES_FACEBOOK = [
 
 //================================ Folders Name For Social Platforms =================================//
 export function getPlatformAlbumName(
-  platformKey: "facebook" | "youtube" | "tiktok" | "instagram" | "documents",
+  platformKey:
+    | "facebook"
+    | "youtube"
+    | "tiktok"
+    | "instagram"
+    | "documents"
+    | "threads",
 ) {
   const base = "Media Tools";
   if (Platform.OS === "android") return `${base}/${platformKey}`;

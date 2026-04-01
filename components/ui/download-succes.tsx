@@ -54,48 +54,55 @@ export function DownloadSuccessModal({
       transparent
       animationType="fade"
       onRequestClose={onRequestClose}
+      statusBarTranslucent
+      hardwareAccelerated
     >
-      <View className="flex-1 bg-[#05060f]/80 items-center justify-center px-6 relative overflow-hidden">
-        <View
-          style={{
-            position: "absolute",
-            top: "22%",
-            left: "18%",
-            width: 220,
-            height: 220,
-            borderRadius: 999,
-            backgroundColor: socialPalette.accentGlowSoft,
-          }}
-        />
-        <View
-          style={{
-            position: "absolute",
-            bottom: "20%",
-            right: "15%",
-            width: 220,
-            height: 220,
-            borderRadius: 999,
-            backgroundColor: socialPalette.accentGlowMidSoft,
-          }}
-        />
-
-        {CONFETTI_ITEMS.map((c, idx) => (
+      <View className="flex-1 bg-[#05060f]/80 items-center justify-center px-6">
+        <View pointerEvents="none" className="absolute inset-0 overflow-hidden">
           <View
-            key={`${c.left}-${idx}`}
             style={{
               position: "absolute",
-              left: c.left,
-              top: c.top,
-              width: 8,
-              height: 8,
-              borderRadius: 2,
-              backgroundColor: c.color,
-              opacity: 0.9,
+              top: "22%",
+              left: "18%",
+              width: 220,
+              height: 220,
+              borderRadius: 999,
+              backgroundColor: socialPalette.accentGlowSoft,
             }}
           />
-        ))}
+          <View
+            style={{
+              position: "absolute",
+              bottom: "20%",
+              right: "15%",
+              width: 220,
+              height: 220,
+              borderRadius: 999,
+              backgroundColor: socialPalette.accentGlowMidSoft,
+            }}
+          />
 
-        <View className="w-full max-w-sm rounded-[32px] border border-white/10 bg-white/[0.04] p-8 items-center">
+          {CONFETTI_ITEMS.map((c, idx) => (
+            <View
+              key={`${c.left}-${idx}`}
+              style={{
+                position: "absolute",
+                left: c.left,
+                top: c.top,
+                width: 8,
+                height: 8,
+                borderRadius: 2,
+                backgroundColor: c.color,
+                opacity: 0.9,
+              }}
+            />
+          ))}
+        </View>
+
+        <View
+          className="w-full max-w-sm rounded-[32px] border border-white/10 bg-white/[0.04] p-8 items-center"
+          style={{ zIndex: 2, elevation: 2 }}
+        >
           <Pressable
             onPress={onRequestClose}
             className="absolute top-5 right-5 w-8 h-8 rounded-full items-center justify-center bg-white/5 active:opacity-80"
@@ -227,6 +234,7 @@ export function DownloadSuccessModal({
         <Pressable
           onPress={onBack}
           className="absolute bottom-8 px-4 py-2 active:opacity-80"
+          style={{ zIndex: 2, elevation: 2 }}
         >
           <Text className="text-[11px] font-bold uppercase tracking-[4px] text-social-slate-500">
             {backLabel ?? "Kembali ke Beranda"}

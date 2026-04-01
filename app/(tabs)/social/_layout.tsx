@@ -15,6 +15,7 @@ export default function AnimeLayout() {
         <Stack.Screen name="instagram" />
         <Stack.Screen name="youtube" />
         <Stack.Screen name="facebook" />
+        <Stack.Screen name="threads" />
       </Stack>
     </View>
   );

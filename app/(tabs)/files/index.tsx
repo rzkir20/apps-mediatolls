@@ -23,6 +23,8 @@ import { DonasiHeader } from "@/components/donasi/Header";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
+import { DownloadProgressModal } from "@/components/ui/download-modal";
+
 import { socialPalette } from "@/lib/pallate";
 
 import {
@@ -222,6 +224,28 @@ export default function FilesScreen() {
   return (
     <View className="flex-1 bg-social-bg">
       <DonasiHeader title="MEDIA TOOLS" />
+
+      <DownloadProgressModal
+        visible={convertingAny}
+        fileName={pickedFile?.name ?? "Konversi dokumen"}
+        progressPercent={convertingAny ? 50 : 0}
+        statusPillText="Converting"
+        statusSubText="Completed"
+        speedText={undefined}
+        remainingText={undefined}
+        downloadedTotalText={
+          convertingAny ? "Sedang mengonversi dokumen..." : ""
+        }
+        qualityText={qualityLabel.toUpperCase()}
+        isPaused={false}
+        isSaving={convertingAny}
+        allowActionWhenCompleted={false}
+        pauseLabel="SEDANG KONVERSI"
+        cancelLabel="TUTUP"
+        onPause={() => {}}
+        onCancel={() => {}}
+        onRequestClose={() => {}}
+      />
 
       <ScrollView
         className="flex-1"
