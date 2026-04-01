@@ -91,6 +91,7 @@ export default function FacebookScreen() {
           void onConfirmClearHistory();
         }}
       />
+
       <DownloadProgressModal
         visible={isDownloadOpen}
         fileName={downloadFileName}
@@ -117,18 +118,24 @@ export default function FacebookScreen() {
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
       />
+
       <DownloadSuccessModal
         visible={isDownloadSuccessOpen}
         fileName={downloadFileName}
+        previewImageUri={metadata?.thumbnail ?? undefined}
+        previewOverlayIconName="brand.facebook"
         sizeText={downloadTotalText ?? undefined}
         speedText={downloadSpeedText ?? undefined}
-        durationText={downloadRemainingText ?? "00:00"}
+        durationText={
+          metadata?.duration?.trim() || downloadRemainingText || "—"
+        }
         formatText="MP4"
         primaryActionLabel="Tutup"
         secondaryActionLabel="Bagikan"
         onPrimaryAction={closeDownloadSuccessModal}
         onSecondaryAction={onShareDownloaded}
         onBack={closeDownloadSuccessModal}
+        backLabel=""
         onRequestClose={closeDownloadSuccessModal}
       />
 

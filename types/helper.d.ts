@@ -85,6 +85,10 @@ type DownloadSuccessModalProps = {
   title?: string;
   message?: string;
   fileName: string;
+  /** When set, shows a 16:9 preview strip with title/size overlay (e.g. platform thumbnail). */
+  previewImageUri?: string;
+  /** Leading icon next to the title on the preview overlay (defaults to `movie`). */
+  previewOverlayIconName?: string;
   sizeText?: string;
   qualityText?: string;
   speedText?: string;
@@ -346,6 +350,9 @@ type SupportedFormatCardsProps = {
 };
 
 //======================= Delete Confirm Modal Types =======================//
+type IconSymbolName =
+  keyof typeof import("../components/ui/icon-symbol").ICON_SYMBOL_MAPPING;
+
 type DeleteConfirmModalProps = {
   visible: boolean;
   title: string;
@@ -354,9 +361,7 @@ type DeleteConfirmModalProps = {
   confirmLabel?: string;
   onCancel: () => void;
   onConfirm: () => void;
-  iconName?: string;
+  iconName?: IconSymbolName;
   iconColor?: string;
   children?: ReactNode;
 };
-
-type IconSymbolName = keyof typeof import("../components/ui/icon-symbol").ICON_SYMBOL_MAPPING;

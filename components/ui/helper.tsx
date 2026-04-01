@@ -223,6 +223,19 @@ export const PLATFORM_TABS = [
   },
 ];
 
+/** Index into `PLATFORM_TABS` for the current social route (0 = TikTok / index). */
+export function getPlatformTabIndex(pathname: string): number {
+  const onInstagram = pathname.includes("/instagram");
+  const onYoutube = pathname.includes("/youtube");
+  const onFacebook = pathname.includes("/facebook");
+  const onThreads = pathname.includes("/threads");
+  if (onInstagram) return 1;
+  if (onFacebook) return 2;
+  if (onYoutube) return 3;
+  if (onThreads) return 4;
+  return 0;
+}
+
 export function isPlatformActive(
   pathname: string,
   id: (typeof PLATFORM_TABS)[number]["id"],
