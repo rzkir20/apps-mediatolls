@@ -10,6 +10,8 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Swipeable } from "react-native-gesture-handler";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { DeleteConfirmModal } from "@/components/ui/delete";
@@ -59,6 +61,7 @@ export default function FacebookScreen() {
     openConfirmClearHistory,
     closeConfirmClearHistory,
     onConfirmClearHistory,
+    onDeleteHistoryItem,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,
@@ -381,13 +384,29 @@ export default function FacebookScreen() {
           {history?.length ? (
             <View className="flex flex-col gap-3">
               {history.slice(0, 10).map((item) => (
-                <HistoryCard
+                <Swipeable
                   key={item.id}
-                  item={item}
-                  onPress={() => setUrl(item.url)}
-                  chevronIconName="arrow.right"
-                  thumbnailVariant="sm"
-                />
+                  overshootRight={false}
+                  renderRightActions={() => (
+                    <View className="flex-row items-stretch justify-end">
+                      <Pressable
+                        onPress={() => void onDeleteHistoryItem(item.id)}
+                        className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                        style={{ width: 72 }}
+                      >
+                        <IconSymbol name="trash" size={18} color="#fff" />
+                      </Pressable>
+                    </View>
+                  )}
+                >
+                  <HistoryCard
+                    item={item}
+                    onPress={() => setUrl(item.url)}
+                    chevronIconName="arrow.right"
+                    thumbnailVariant="sm"
+                    containerClassName="mr-2"
+                  />
+                </Swipeable>
               ))}
             </View>
           ) : (

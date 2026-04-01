@@ -31,6 +31,7 @@ export default function SystemScreen() {
     storageTotalText,
     storagePercentRounded,
     categories,
+    categoriesLoading,
   } = useDevicesController();
 
   return (
@@ -198,35 +199,50 @@ export default function SystemScreen() {
               </View>
             </View>
 
-            <View className="flex-row flex-wrap gap-4">
-              {categories.map((c) => (
-                <Pressable
-                  key={c.key}
-                  className="w-[48%] p-5 rounded-[40px] bg-white/5 border border-white/5 flex-col items-start"
-                  style={{ opacity: 1 }}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    // For now the design is static; wiring filtering can come later.
-                    // Keeping it non-blocking to avoid unexpected UX changes.
-                    setSortKey((prev) => prev);
-                  }}
-                >
-                  <View
-                    className="w-12 h-12 rounded-2xl items-center justify-center mb-4"
-                    style={{ backgroundColor: c.iconBg }}
+            {categoriesLoading ? (
+              <View className="rounded-[32px] bg-white/5 border border-white/10 p-5">
+                <Text className="text-xs font-bold text-slate-500">
+                  Loading device folders...
+                </Text>
+              </View>
+            ) : categories.length === 0 ? (
+              <View className="rounded-[32px] bg-white/5 border border-white/10 p-5">
+                <Text className="text-xs font-bold text-slate-500">
+                  Tidak ada folder unduhan yang terdeteksi. Pastikan izin Storage
+                  sudah diaktifkan dan kamu sudah pernah download konten.
+                </Text>
+              </View>
+            ) : (
+              <View className="flex-row flex-wrap gap-4">
+                {categories.map((c) => (
+                  <Pressable
+                    key={c.key}
+                    className="w-[48%] p-5 rounded-[40px] bg-white/5 border border-white/5 flex-col items-start"
+                    style={{ opacity: 1 }}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      // For now the design is static; wiring filtering can come later.
+                      // Keeping it non-blocking to avoid unexpected UX changes.
+                      setSortKey((prev) => prev);
+                    }}
                   >
-                    <IconSymbol name={c.icon} size={24} color={c.iconColor} />
-                  </View>
+                    <View
+                      className="w-12 h-12 rounded-2xl items-center justify-center mb-4"
+                      style={{ backgroundColor: c.iconBg }}
+                    >
+                      <IconSymbol name={c.icon} size={24} color={c.iconColor} />
+                    </View>
 
-                  <Text className="text-base font-bold text-white">
-                    {c.title}
-                  </Text>
-                  <Text className="text-[11px] font-medium text-slate-500 mt-1">
-                    {c.meta}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+                    <Text className="text-base font-bold text-white">
+                      {c.title}
+                    </Text>
+                    <Text className="text-[11px] font-medium text-slate-500 mt-1">
+                      {c.meta}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
           </View>
         </View>
       </ScrollView>

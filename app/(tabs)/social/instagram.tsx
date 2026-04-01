@@ -10,6 +10,8 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Swipeable } from "react-native-gesture-handler";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { DialogInstagram } from "@/components/social/instagram/DialogInstagram";
@@ -43,6 +45,7 @@ export default function InstagramScreen() {
     openConfirmClearHistory,
     closeConfirmClearHistory,
     onConfirmClearHistory,
+    onDeleteHistoryItem,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,
@@ -159,7 +162,7 @@ export default function InstagramScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              BE DIFFERENT
+              Instagram Platform
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-8">
@@ -437,12 +440,28 @@ export default function InstagramScreen() {
           {history?.length ? (
             <View className="flex flex-col gap-3">
               {history.slice(0, 10).map((item) => (
-                <HistoryCard
+                <Swipeable
                   key={item.id}
-                  item={item}
-                  onPress={() => setUrl(item.url)}
-                  chevronIconName="arrow.right"
-                />
+                  overshootRight={false}
+                  renderRightActions={() => (
+                    <View className="flex-row items-stretch justify-end">
+                      <Pressable
+                        onPress={() => void onDeleteHistoryItem(item.id)}
+                        className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                        style={{ width: 72 }}
+                      >
+                        <IconSymbol name="trash" size={18} color="#fff" />
+                      </Pressable>
+                    </View>
+                  )}
+                >
+                  <HistoryCard
+                    item={item}
+                    onPress={() => setUrl(item.url)}
+                    chevronIconName="arrow.right"
+                    containerClassName="mr-2"
+                  />
+                </Swipeable>
               ))}
             </View>
           ) : (

@@ -1,6 +1,6 @@
 import React from "react";
 
-import { LinearGradient } from "expo-linear-gradient";
+import { router } from "expo-router";
 
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -8,70 +8,67 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
+import { BottomSheets } from "@/components/BottomSheets";
+
 import { socialPalette } from "@/lib/pallate";
-
-import { useSettingsPermissionsController } from "@/services/settings.service";
-
-import { PermissionCard } from "@/components/ui/helper";
 
 const BG = socialPalette.bg;
 
 const ACCENT = socialPalette.accent;
 
+const LANGUAGE_OPTIONS = [
+  { key: "id", label: "Bahasa Indonesia" },
+  { key: "en", label: "English" },
+] as const;
+
+const SETTINGS_CARDS = [
+  {
+    key: "permissions",
+    title: "Permissions",
+    description: "Kelola akses kamera, mikrofon, dan penyimpanan aplikasi.",
+    icon: "settings" as const,
+    route: "/(tabs)/settings/permissions" as const,
+  },
+  {
+    key: "language",
+    title: "Language",
+    description: "Pilih bahasa tampilan aplikasi sesuai preferensi Anda.",
+    icon: "book" as const,
+    route: "/(tabs)/settings/language" as const,
+  },
+  {
+    key: "about",
+    title: "About",
+    description: "Informasi aplikasi, versi, dan detail pengembang.",
+    icon: "info" as const,
+    route: "/(tabs)/settings/about" as const,
+  },
+  {
+    key: "privacy",
+    title: "Privacy",
+    description: "Pelajari kebijakan privasi dan penggunaan data Anda.",
+    icon: "lock" as const,
+    route: "/(tabs)/settings/privacy" as const,
+  },
+  {
+    key: "faqs",
+    title: "FAQs",
+    description:
+      "Temukan jawaban cepat untuk pertanyaan yang sering ditanyakan.",
+    icon: "search" as const,
+    route: "/(tabs)/settings/faqs" as const,
+  },
+];
+
 export default function SettingsPermissionsScreen() {
   const insets = useSafeAreaInsets();
-  const {
-    mediaLibrary,
-    camera,
-    microphone,
-    isRefreshing,
-    busy,
-    localError,
-    filesAccess,
-    allGranted,
-    safeRequest,
-    onGrantAll,
-  } = useSettingsPermissionsController();
+  const [isLanguageSheetOpen, setIsLanguageSheetOpen] = React.useState(false);
+  const [selectedLanguage, setSelectedLanguage] = React.useState<"id" | "en">(
+    "id",
+  );
 
   return (
     <View className="flex-1" style={{ backgroundColor: BG }}>
-      <View className="px-4 pt-6">
-        <View className="flex-row items-center justify-between pb-4">
-          <View className="flex-row items-center gap-2">
-            <LinearGradient
-              colors={[ACCENT, socialPalette.accentEnd]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 12,
-                alignItems: "center",
-                justifyContent: "center",
-                shadowColor: ACCENT,
-                shadowOpacity: 0.2,
-                shadowRadius: 12,
-                shadowOffset: { width: 0, height: 8 },
-                elevation: 6,
-              }}
-            >
-              <IconSymbol name="play" size={18} color="#fff" />
-            </LinearGradient>
-            <Text className="text-xl font-extrabold tracking-tight text-white font-cabinet">
-              MEDIA TOOLS
-            </Text>
-          </View>
-
-          <Pressable className="w-10 h-10 rounded-full border border-white/10 items-center justify-center overflow-hidden bg-white/5">
-            <IconSymbol
-              name="person"
-              size={22}
-              color="rgba(255,255,255,0.70)"
-            />
-          </Pressable>
-        </View>
-      </View>
-
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ paddingBottom: insets.bottom + 96 }}
@@ -81,99 +78,99 @@ export default function SettingsPermissionsScreen() {
           <View className="flex-row items-center gap-3">
             <View className="h-[2px] w-8" style={{ backgroundColor: ACCENT }} />
             <Text className="text-social-accent font-black text-[10px] tracking-[0.2em] uppercase">
-              Privacy & Security
+              App Preferences
             </Text>
           </View>
 
           <Text className="text-4xl font-cabinet font-extrabold leading-[44px] tracking-tight text-white">
-            App{"\n"}
-            <Text style={{ color: ACCENT }}>Permissions</Text>
+            Settings{"\n"}
+            <Text style={{ color: ACCENT }}>Center</Text>
           </Text>
 
           <Text className="text-slate-400 text-sm font-medium leading-relaxed">
-            Untuk memberikan pengalaman terbaik, Media Tools memerlukan akses ke
-            beberapa fitur perangkat Anda. Privasi Anda adalah prioritas kami.
+            Atur pengalaman aplikasi Anda dari satu tempat, mulai dari izin
+            perangkat, bahasa, informasi aplikasi, hingga kebijakan privasi.
           </Text>
         </View>
 
-        <View className="px-4 flex flex-col gap-6">
-          {!!localError && (
-            <View className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 mb-2">
-              <Text className="text-xs font-semibold text-red-200">
-                {localError}
-              </Text>
-            </View>
-          )}
-
-          <PermissionCard
-            title="Storage Access"
-            description="Access your device storage to save downloaded content directly to your gallery."
-            iconName="hard-drive"
-            iconTint="#3b82f6"
-            iconBg="rgba(59,130,246,0.10)"
-            granted={mediaLibrary}
-            checking={isRefreshing}
-            busy={busy === "storage"}
-            onRequest={() => void safeRequest("storage")}
-            showDeny
-          />
-
-          <PermissionCard
-            title="Camera"
-            description="Used for video recording features and AR filters within the internal media player."
-            iconName="camera"
-            iconTint="#a855f7"
-            iconBg="rgba(168,85,247,0.10)"
-            granted={camera}
-            checking={isRefreshing}
-            busy={busy === "camera"}
-            onRequest={() => void safeRequest("camera")}
-          />
-
-          <PermissionCard
-            title="Microphone"
-            description="Required for audio recording, voice processing, and format conversion stabilization."
-            iconName="mic"
-            iconTint="#f97316"
-            iconBg="rgba(249,115,22,0.10)"
-            granted={microphone}
-            checking={isRefreshing}
-            busy={busy === "mic"}
-            onRequest={() => void safeRequest("mic")}
-          />
-
-          <PermissionCard
-            title="Files Access"
-            description="Permission to access and manage your files for document conversion and batch renaming."
-            iconName="folder.search"
-            iconTint="#06b6d4"
-            iconBg="rgba(6,182,212,0.10)"
-            granted={filesAccess}
-            checking={isRefreshing}
-            busy={busy === "files"}
-            onRequest={() => void safeRequest("files")}
-          />
-
-          <Pressable
-            onPress={() => void onGrantAll()}
-            disabled={allGranted || !!busy || isRefreshing}
-            className="w-full py-5 rounded-[32px] items-center justify-center"
-            style={{
-              backgroundColor: ACCENT,
-              opacity: allGranted || busy || isRefreshing ? 0.6 : 1,
-              shadowColor: ACCENT,
-              shadowOpacity: 0.3,
-              shadowRadius: 24,
-              shadowOffset: { width: 0, height: 16 },
-              elevation: 10,
-            }}
-          >
-            <Text className="text-white font-black uppercase tracking-[0.2em] text-xs">
-              {allGranted ? "All Permissions Granted" : "Grant All Permissions"}
-            </Text>
-          </Pressable>
+        <View className="px-4 flex flex-col gap-4">
+          {SETTINGS_CARDS.map((item) => (
+            <Pressable
+              key={item.key}
+              className="rounded-[28px] border border-white/10 bg-white/[0.03] px-5 py-4"
+              onPress={() => {
+                if (item.key === "language") {
+                  setIsLanguageSheetOpen(true);
+                  return;
+                }
+                router.push(item.route as never);
+              }}
+            >
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-4 flex-1">
+                  <View className="h-11 w-11 rounded-2xl bg-social-accent/10 items-center justify-center">
+                    <IconSymbol name={item.icon} size={22} color={ACCENT} />
+                  </View>
+                  <View className="flex-1 pr-4">
+                    <Text className="text-white text-base font-bold">
+                      {item.title}
+                    </Text>
+                    <Text className="text-slate-400 text-xs leading-relaxed mt-1">
+                      {item.key === "language"
+                        ? `Bahasa saat ini: ${
+                            selectedLanguage === "id"
+                              ? "Bahasa Indonesia"
+                              : "English"
+                          }`
+                        : item.description}
+                    </Text>
+                  </View>
+                </View>
+                <IconSymbol name="chevron.right" size={18} color="#94a3b8" />
+              </View>
+            </Pressable>
+          ))}
         </View>
       </ScrollView>
+
+      <BottomSheets
+        visible={isLanguageSheetOpen}
+        onClose={() => setIsLanguageSheetOpen(false)}
+        title="Pilih Bahasa"
+      >
+        <View className="pb-6 gap-2">
+          {LANGUAGE_OPTIONS.map((language) => {
+            const active = selectedLanguage === language.key;
+            return (
+              <Pressable
+                key={language.key}
+                onPress={() => {
+                  setSelectedLanguage(language.key);
+                  setIsLanguageSheetOpen(false);
+                }}
+                className={`rounded-2xl px-4 py-4 border ${
+                  active
+                    ? "border-social-accent bg-social-accent/10"
+                    : "border-white/10 bg-white/[0.03]"
+                }`}
+              >
+                <View className="flex-row items-center justify-between">
+                  <Text
+                    className={`text-sm font-bold ${
+                      active ? "text-social-accent" : "text-white"
+                    }`}
+                  >
+                    {language.label}
+                  </Text>
+                  {active ? (
+                    <IconSymbol name="checkmark" size={18} color={ACCENT} />
+                  ) : null}
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheets>
     </View>
   );
 }

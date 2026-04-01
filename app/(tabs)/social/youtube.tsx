@@ -34,6 +34,7 @@ import { useYoutubeController } from "@/services/youtube.service";
 import { SUPPORTED_FORMAT_CARDS } from "@/components/ui/helper";
 
 import { DeleteConfirmModal } from "@/components/ui/delete";
+
 import { HistoryCard } from "@/components/ui/history-card";
 
 export default function YoutubeScreen() {
@@ -177,12 +178,12 @@ export default function YoutubeScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              BE DIFFERENT
+              YouTube Platform
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-3">
             Download YouTube{"\n"}
-            <Text className="text-social-accent">Video</Text>
+            <Text className="text-social-accent">Video/Audio/Short</Text>
           </Text>
 
           <View className="flex flex-col gap-4">

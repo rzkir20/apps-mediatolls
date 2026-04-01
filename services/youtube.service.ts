@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { Linking, Share } from "react-native";
+import { Linking, Share, ToastAndroid } from "react-native";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -330,6 +330,7 @@ export function useYoutubeController() {
       previewLoadText: null,
       saveText: null,
     });
+    ToastAndroid.show("Riwayat berhasil dihapus", ToastAndroid.SHORT);
   }, [qc, setUi]);
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
@@ -354,6 +355,7 @@ export function useYoutubeController() {
   const onDeleteHistoryItem = useCallback(
     async (id: string) => {
       await setHistory((prev) => prev.filter((item) => item.id !== id));
+      ToastAndroid.show("Item riwayat dihapus", ToastAndroid.SHORT);
     },
     [setHistory],
   );

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { LayoutChangeEvent, Linking, Share } from "react-native";
+import { LayoutChangeEvent, Linking, Share, ToastAndroid } from "react-native";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -264,7 +264,17 @@ export function useInstagramController() {
   const onClearHistory = useCallback(async () => {
     qc.setQueryData<HistoryItem[]>(historyKey, []);
     await AsyncStorage.removeItem(STORAGE_KEY_INSTAGRAM_HISTORY);
+    ToastAndroid.show("Riwayat berhasil dihapus", ToastAndroid.SHORT);
   }, [qc]);
+
+  const onDeleteHistoryItem = useCallback(
+    async (id: string) => {
+      if (!id) return;
+      await setHistory((prev) => prev.filter((item) => item.id !== id));
+      ToastAndroid.show("Item riwayat dihapus", ToastAndroid.SHORT);
+    },
+    [setHistory],
+  );
 
   const historyItems = history.data ?? [];
   const historyLength = historyItems.length;
@@ -870,6 +880,7 @@ export function useInstagramController() {
     openConfirmClearHistory,
     closeConfirmClearHistory,
     onConfirmClearHistory,
+    onDeleteHistoryItem,
     isPreviewOpen,
     previewUrl,
     previewLoadPercent,

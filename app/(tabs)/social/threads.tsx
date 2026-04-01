@@ -8,17 +8,23 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Swipeable } from "react-native-gesture-handler";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { PreviewVideo, historyTypeIconName } from "@/components/ui/helper";
 
 import { Dialog } from "@/components/ui/dialog";
 
+import { DeleteConfirmModal } from "@/components/ui/delete";
+
 import LoadingMediaPlayer from "@/components/LoadingMediaPlayer";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
+import { HistoryCard } from "@/components/ui/history-card";
 
 import { socialPalette } from "@/lib/pallate";
 
@@ -41,6 +47,19 @@ export default function ThreadsScreen() {
 
   return (
     <View className="flex-1 bg-social-bg">
+      <DeleteConfirmModal
+        visible={c.isConfirmClearOpen}
+        title="Hapus semua riwayat?"
+        description="Semua riwayat download Threads akan dihapus permanen dan tidak bisa dikembalikan."
+        cancelLabel="Batal"
+        confirmLabel="Hapus"
+        iconName="history.clear"
+        iconColor="#f97373"
+        onCancel={c.closeConfirmClearHistory}
+        onConfirm={() => {
+          void c.onConfirmClearHistory();
+        }}
+      />
       <DownloadProgressModal
         visible={c.isDownloadOpen}
         fileName={c.downloadFileName}
@@ -199,8 +218,16 @@ export default function ThreadsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View className="mt-4 mb-8 px-5">
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="h-0.5 w-8 bg-social-accent" />
+            <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
+              Threads Platform
+            </Text>
+          </View>
+
           <Text className="font-cabinet text-3xl font-black tracking-tight mb-2 text-white">
-            Thread <Text className="text-social-accent">Downloader</Text>
+            Download Threads {"\n"}
+            <Text className="text-social-accent">Video/Image</Text>
           </Text>
           <Text className="text-social-slate-500 text-sm font-medium">
             Unduh video dan gambar dari Threads dengan kualitas terbaik.
@@ -500,42 +527,31 @@ export default function ThreadsScreen() {
 
           <View className="gap-3">
             {c.history.slice(0, 10).map((item) => (
-              <View
+              <Swipeable
                 key={item.id}
-                className="rounded-2xl p-3 flex-row items-center gap-4 bg-white/[0.03] border border-white/10"
+                overshootRight={false}
+                renderRightActions={() => (
+                  <View className="flex-row items-stretch justify-end">
+                    <Pressable
+                      onPress={() => void c.onDeleteHistoryItem(item.id)}
+                      className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                      style={{ width: 72 }}
+                    >
+                      <IconSymbol name="trash" size={18} color="#fff" />
+                    </Pressable>
+                  </View>
+                )}
               >
-                <View className="w-12 h-12 rounded-xl overflow-hidden bg-slate-800 shrink-0 border border-white/5">
-                  <Image
-                    source={{ uri: item.cover }}
-                    style={{ width: "100%", height: "100%" }}
-                    contentFit="cover"
-                  />
-                </View>
-                <View className="flex-1 min-w-0">
-                  <Text
-                    className="text-xs font-bold text-white"
-                    numberOfLines={1}
-                  >
-                    {item.title}
-                  </Text>
-                  <Text className="text-[10px] text-social-slate-500 font-medium mt-1">
-                    {item.type}
-                  </Text>
-                </View>
-                <Pressable
+                <HistoryCard
+                  item={item}
+                  thumbnailVariant="sm"
+                  containerClassName="rounded-2xl mr-2"
                   onPress={async () => {
                     c.setUrl(item.url);
                     await c.onFetchResult();
                   }}
-                  className="w-8 h-8 rounded-lg bg-white/5 items-center justify-center active:opacity-80"
-                >
-                  <IconSymbol
-                    name="chevron.right"
-                    size={18}
-                    color={socialPalette.slate500}
-                  />
-                </Pressable>
-              </View>
+                />
+              </Swipeable>
             ))}
             {!c.history.length && (
               <View className="rounded-2xl p-4 bg-white/[0.03] border border-white/10">

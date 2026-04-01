@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
+import { ToastAndroid } from "react-native";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -286,7 +287,17 @@ export function useThreadsController() {
   const onClearHistory = useCallback(async () => {
     qc.setQueryData<HistoryItem[]>(historyKey, []);
     await AsyncStorage.removeItem(STORAGE_KEY_THREADS_HISTORY);
+    ToastAndroid.show("Riwayat berhasil dihapus", ToastAndroid.SHORT);
   }, [qc]);
+
+  const onDeleteHistoryItem = useCallback(
+    async (id: string) => {
+      if (!id) return;
+      await setHistory((prev) => prev.filter((item) => item.id !== id));
+      ToastAndroid.show("Item riwayat dihapus", ToastAndroid.SHORT);
+    },
+    [setHistory],
+  );
 
   const onConfirmClearHistory = useCallback(async () => {
     closeConfirmClearHistory();
@@ -632,6 +643,7 @@ export function useThreadsController() {
     openConfirmClearHistory,
     closeConfirmClearHistory,
     onConfirmClearHistory,
+    onDeleteHistoryItem,
 
     isDownloadOpen,
     downloadPercent,

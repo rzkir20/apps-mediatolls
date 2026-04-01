@@ -9,9 +9,8 @@ import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
 type IconMapping = {
   [key: string]: ComponentProps<typeof MaterialIcons>["name"];
 };
-type IconSymbolName = keyof typeof MAPPING;
 
-const MAPPING = {
+export const ICON_SYMBOL_MAPPING = {
   "house.fill": "home",
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
@@ -78,11 +77,14 @@ const MAPPING = {
   "format.mp4": "movie",
   "format.gif": "gif",
   "brand.tiktok": "tiktok",
-  "brand.instagram": "photo-camera",
+  "brand.instagram": "camera-alt",
   "brand.facebook": "facebook",
   "brand.youtube": "play-circle-filled",
+  "brand.web": "public",
   trash: "delete",
-} as IconMapping;
+} as const satisfies IconMapping;
+
+export type IconSymbolName = keyof typeof ICON_SYMBOL_MAPPING;
 
 export function IconSymbol({
   name,
@@ -96,7 +98,7 @@ export function IconSymbol({
   style?: StyleProp<TextStyle>;
   weight?: SymbolWeight;
 }) {
-  const resolvedName = MAPPING[name] ?? "help-outline";
+  const resolvedName = ICON_SYMBOL_MAPPING[name] ?? "help-outline";
   const resolvedColor =
     color != null && typeof color === "string" ? color : "#64748b";
 

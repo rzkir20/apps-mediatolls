@@ -248,9 +248,9 @@ export default function PermissionSetupScreen() {
       {
         key: "gallery" as const,
         title: "Gallery Access",
-        subtitle: "Untuk konversi dokumen",
+        subtitle: "Untuk akses galeri & file",
         desc: "Izin ini diperlukan untuk memilih gambar atau dokumen dari galeri Anda untuk dikonversi menjadi format lain.",
-        iconName: "image" as const,
+        iconName: "photo" as const,
         iconBg: "rgba(255,61,87,0.10)",
         buttonLabel: "Grant Gallery Access",
       },

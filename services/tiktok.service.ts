@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
-import { Linking, Share, type LayoutChangeEvent } from "react-native";
+import { Linking, Share, ToastAndroid, type LayoutChangeEvent } from "react-native";
 
 import * as Clipboard from "expo-clipboard";
 
@@ -218,7 +218,17 @@ export function useTiktokController() {
   const onClearHistory = useCallback(async () => {
     qc.setQueryData<HistoryItem[]>(historyKey, []);
     await AsyncStorage.removeItem(STORAGE_KEY_TIKTOK_HISTORY);
+    ToastAndroid.show("Riwayat berhasil dihapus", ToastAndroid.SHORT);
   }, [qc]);
+
+  const onDeleteHistoryItem = useCallback(
+    async (id: string) => {
+      if (!id) return;
+      await setHistory((prev) => prev.filter((item) => item.id !== id));
+      ToastAndroid.show("Item riwayat dihapus", ToastAndroid.SHORT);
+    },
+    [setHistory],
+  );
 
   const canFetch = useMemo(() => !!url.trim() && !!baseUrl, [url, baseUrl]);
 
@@ -868,6 +878,7 @@ export function useTiktokController() {
     onPhotoPreviewScrollEnd,
     onCoverPhotoScrollEnd,
     onClearHistory,
+    onDeleteHistoryItem,
     closePreview,
     closeDownloadModal,
     closeDownloadSuccessModal,

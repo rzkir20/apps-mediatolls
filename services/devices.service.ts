@@ -1,15 +1,19 @@
 import * as FileSystem from "expo-file-system/legacy";
 
+import * as MediaLibrary from "expo-media-library";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { getPlatformAlbumName } from "@/components/ui/helper";
+
 export type SortKey = "latest" | "oldest" | "size";
 
 type Category = {
-  key: "videos" | "images" | "audio" | "stories";
+  key: string;
   title: string;
-  icon: "video" | "photo" | "music.note" | "drama";
+  icon: IconSymbolName;
   iconBg: string;
   iconColor: string;
   meta: string;
@@ -48,6 +52,9 @@ export function useDevicesController() {
   const retryStorage = useCallback(() => {
     setStorageRetryNonce((n) => n + 1);
   }, []);
+
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
   const storageUsedBytes = useMemo(() => {
     if (storageTotalBytes == null || storageFreeBytes == null) return null;
@@ -95,43 +102,116 @@ export function useDevicesController() {
     };
   }, [storageRetryNonce]);
 
-  const categories = useMemo<Category[]>(
-    () => [
+  useEffect(() => {
+    let cancelled = false;
+
+    const platformDefs: {
+      key:
+        | "tiktok"
+        | "instagram"
+        | "facebook"
+        | "youtube"
+        | "threads"
+        | "documents";
+      title: string;
+      icon: IconSymbolName;
+      iconColor: string;
+      iconBg: string;
+    }[] = [
       {
-        key: "videos",
-        title: "Videos",
-        icon: "video",
-        iconBg: "rgba(59, 130, 246, 0.10)",
-        iconColor: "#3b82f6",
-        meta: "42 Files • 124 MB",
+        key: "tiktok",
+        title: "TikTok",
+        icon: "brand.tiktok",
+        iconColor: "#ffffff",
+        iconBg: "rgba(255,255,255,0.10)",
       },
       {
-        key: "images",
-        title: "Images",
-        icon: "photo",
-        iconBg: "rgba(225, 29, 72, 0.10)",
+        key: "instagram",
+        title: "Instagram",
+        icon: "brand.instagram",
         iconColor: socialPalette.accent,
-        meta: "128 Files • 18 MB",
+        iconBg: "rgba(255,61,87,0.10)",
       },
       {
-        key: "audio",
-        title: "Audio",
-        icon: "music.note",
-        iconBg: "rgba(249, 115, 22, 0.10)",
-        iconColor: "#f97316",
-        meta: "12 Files • 9.4 MB",
+        key: "facebook",
+        title: "Facebook",
+        icon: "brand.facebook",
+        iconColor: "#1877F2",
+        iconBg: "rgba(24,119,242,0.10)",
       },
       {
-        key: "stories",
-        title: "Stories",
-        icon: "drama",
-        iconBg: "rgba(6, 182, 212, 0.10)",
+        key: "youtube",
+        title: "YouTube",
+        icon: "brand.youtube",
+        iconColor: "#ef4444",
+        iconBg: "rgba(239,68,68,0.10)",
+      },
+      {
+        key: "threads",
+        title: "Threads",
+        icon: "layers",
+        iconColor: "#ffffff",
+        iconBg: "rgba(255,255,255,0.10)",
+      },
+      {
+        key: "documents",
+        title: "Documents",
+        icon: "doc.text",
         iconColor: "#06b6d4",
-        meta: "8 Files • 5.4 MB",
+        iconBg: "rgba(6,182,212,0.10)",
       },
-    ],
-    [],
-  );
+    ];
+
+    const load = async () => {
+      try {
+        setCategoriesLoading(true);
+        const perm = await MediaLibrary.getPermissionsAsync();
+        if (cancelled) return;
+
+        if (perm.status !== "granted") {
+          setCategories([]);
+          return;
+        }
+
+        const albumResults = await Promise.all(
+          platformDefs.map(async (p) => {
+            const albumName = getPlatformAlbumName(p.key);
+            const album = await MediaLibrary.getAlbumAsync(albumName);
+            return { p, albumName, album };
+          }),
+        );
+
+        if (cancelled) return;
+
+        const next: Category[] = albumResults
+          .filter((r) => r.album != null)
+          .map((r) => {
+            const assetCount = r.album?.assetCount ?? 0;
+            return {
+              key: r.p.key,
+              title: r.p.title,
+              icon: r.p.icon,
+              iconBg: r.p.iconBg,
+              iconColor: r.p.iconColor,
+              meta: `${assetCount} Files`,
+            };
+          })
+          .sort((a, b) => a.title.localeCompare(b.title));
+
+        setCategories(next);
+      } catch {
+        if (!cancelled) setCategories([]);
+      } finally {
+        if (!cancelled) setCategoriesLoading(false);
+      }
+    };
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const storageUsedText =
     storageUsedBytes == null ? "Tidak tersedia" : formatBytes(storageUsedBytes);
@@ -156,6 +236,6 @@ export function useDevicesController() {
     storagePercentRounded,
 
     categories,
+    categoriesLoading,
   };
 }
-

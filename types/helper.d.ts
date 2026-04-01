@@ -358,3 +358,5 @@ type DeleteConfirmModalProps = {
   iconColor?: string;
   children?: ReactNode;
 };
+
+type IconSymbolName = keyof typeof import("../components/ui/icon-symbol").ICON_SYMBOL_MAPPING;

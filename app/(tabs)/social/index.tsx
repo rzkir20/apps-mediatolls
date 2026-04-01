@@ -12,6 +12,8 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { Swipeable } from "react-native-gesture-handler";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { socialPalette } from "@/lib/pallate";
@@ -71,6 +73,7 @@ export default function HomeScreen() {
     onPhotoPreviewScrollEnd,
     onCoverPhotoScrollEnd,
     onClearHistory,
+    onDeleteHistoryItem,
     onDownloadVideoMp4,
     onDownloadAudioMp3,
     onDownloadPhotos,
@@ -169,19 +172,19 @@ export default function HomeScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              BE DIFFERENT
+              Tiktok Platform
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-2">
-            Online Video{"\n"}
-            <Text className="text-social-accent">Downloader</Text>
+            Download Tiktok {"\n"}
+            <Text className="text-social-accent">Video/Photo</Text>
           </Text>
 
           <View className="flex flex-col gap-6 mt-6">
             <TextInput
               value={url}
               onChangeText={setUrl}
-              placeholder="Insert TikTok Video Link Here..."
+              placeholder="Insert Tiktok Video Link Here..."
               placeholderTextColor={socialPalette.slate600}
               className="w-full bg-black border border-white/10 rounded-2xl py-5 px-4 text-sm font-medium text-white"
               autoCapitalize="none"
@@ -467,13 +470,29 @@ export default function HomeScreen() {
           {history?.length ? (
             <View className="flex flex-col gap-3">
               {history.slice(0, 10).map((item) => (
-                <HistoryCard
+                <Swipeable
                   key={item.id}
-                  item={item}
-                  onPress={() => setUrl(item.url)}
-                  chevronIconName="arrow.right"
-                  thumbnailVariant="sm"
-                />
+                  overshootRight={false}
+                  renderRightActions={() => (
+                    <View className="flex-row items-stretch justify-end">
+                      <Pressable
+                        onPress={() => void onDeleteHistoryItem(item.id)}
+                        className="rounded-3xl bg-red-500/90 flex-row items-center justify-center"
+                        style={{ width: 72 }}
+                      >
+                        <IconSymbol name="trash" size={18} color="#fff" />
+                      </Pressable>
+                    </View>
+                  )}
+                >
+                  <HistoryCard
+                    item={item}
+                    onPress={() => setUrl(item.url)}
+                    chevronIconName="arrow.right"
+                    thumbnailVariant="sm"
+                    containerClassName="mr-2"
+                  />
+                </Swipeable>
               ))}
             </View>
           ) : (
