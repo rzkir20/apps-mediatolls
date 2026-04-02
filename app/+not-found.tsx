@@ -5,7 +5,9 @@ import { Stack, useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 
 import { Linking, Text, TouchableOpacity, View } from "react-native";
+
 import { useLanguage } from "@/context/LanguageContext";
+
 import languageData from "@/lib/language.json";
 
 export default function NotFoundScreen() {

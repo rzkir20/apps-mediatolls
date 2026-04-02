@@ -18,6 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol, type IconSymbolName } from "@/components/ui/icon-symbol";
 
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 import { bottomSheet, socialPalette } from "@/lib/pallate";
 
 function sizeTextToLabel(sizeText?: string) {
@@ -45,11 +47,13 @@ export function DownloadSuccessModal({
   onBack,
   onRequestClose,
 }: DownloadSuccessModalProps) {
+  const { language } = useLanguage();
+  const copy = languageData.downloadSuccessModal[language];
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
   const hasSecondary = !!secondaryActionLabel && !!onSecondaryAction;
   const resolvedBackLabel =
-    backLabel === "" ? null : (backLabel ?? "Kembali ke Beranda");
+    backLabel === "" ? null : (backLabel ?? copy.backToHome);
   const overlayIcon = (previewOverlayIconName ?? "movie") as IconSymbolName;
   const handleRequestClose = onRequestClose ?? (() => {});
 
@@ -147,13 +151,13 @@ export function DownloadSuccessModal({
             </View>
 
             <Text className="text-[26px] leading-8 font-extrabold tracking-tight text-white text-center px-2">
-              {title ?? "Selesai!"}
+              {title ?? copy.doneTitle}
             </Text>
             <Text
               className="text-sm font-medium text-center leading-relaxed mt-2 mb-5 px-2"
               style={{ color: "rgba(226, 232, 240, 0.9)" }}
             >
-              {message ?? "Media berhasil diunduh ke galeri perangkat Anda."}
+              {message ?? copy.doneMessage}
             </Text>
 
             <View
@@ -199,7 +203,7 @@ export function DownloadSuccessModal({
                           textShadowRadius: 4,
                         }}
                       >
-                        {fileName || "Facebook Video"}
+                        {fileName || copy.facebookVideo}
                       </Text>
                     </View>
                     {!!sizeText && (
@@ -223,7 +227,7 @@ export function DownloadSuccessModal({
                       className="text-sm font-bold text-white"
                       numberOfLines={2}
                     >
-                      {fileName || "MediaTools_File.mp4"}
+                      {fileName || copy.defaultFileName}
                     </Text>
                     <View className="flex-row items-center gap-2 mt-1 flex-wrap">
                       {!!sizeText && (
@@ -247,7 +251,7 @@ export function DownloadSuccessModal({
               <View className="flex-row items-stretch border-t border-white/10 px-2 py-3.5">
                 <View className="items-center flex-1 min-w-0 px-0.5">
                   <Text className="text-[9px] font-black uppercase tracking-widest text-social-slate-500 mb-1">
-                    Kecepatan
+                    {copy.speed}
                   </Text>
                   <Text
                     className="text-xs font-bold text-white text-center"
@@ -259,7 +263,7 @@ export function DownloadSuccessModal({
                 <View className="w-px bg-white/10 self-stretch" />
                 <View className="items-center flex-1 min-w-0 px-0.5">
                   <Text className="text-[9px] font-black uppercase tracking-widest text-social-slate-500 mb-1">
-                    Waktu
+                    {copy.time}
                   </Text>
                   <Text
                     className="text-xs font-bold text-white text-center"
@@ -271,13 +275,13 @@ export function DownloadSuccessModal({
                 <View className="w-px bg-white/10 self-stretch" />
                 <View className="items-center flex-1 min-w-0 px-0.5">
                   <Text className="text-[9px] font-black uppercase tracking-widest text-social-slate-500 mb-1">
-                    Format
+                    {copy.format}
                   </Text>
                   <Text
                     className="text-xs font-bold text-white uppercase text-center"
                     numberOfLines={1}
                   >
-                    {formatText ?? "MP4"}
+                    {formatText ?? copy.defaultFormat}
                   </Text>
                 </View>
               </View>
@@ -301,7 +305,7 @@ export function DownloadSuccessModal({
                   }}
                 >
                   <Text className="text-xs font-black uppercase tracking-[3px] text-white">
-                    {primaryActionLabel ?? "Buka File"}
+                    {primaryActionLabel ?? copy.openFile}
                   </Text>
                 </LinearGradient>
               </Pressable>

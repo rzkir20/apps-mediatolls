@@ -271,6 +271,14 @@
       "active": "Aktif",
       "platform": "Platform",
       "features": "Fitur Unggulan",
+      "featureFastTitle": "Super Cepat",
+      "featureFastDesc": "Server berkecepatan tinggi untuk hasil instan.",
+      "featureSecureTitle": "100% Aman",
+      "featureSecureDesc": "Data Anda diproses dengan fokus pada privasi pengguna.",
+      "featureHdTitle": "Kualitas HD",
+      "featureHdDesc": "Mendukung resolusi tinggi sesuai sumber yang tersedia.",
+      "featureMultiPlatformTitle": "Multi-Platform",
+      "featureMultiPlatformDesc": "Satu alat untuk berbagai platform sosial media.",
       "developedBy": "Dikembangkan oleh",
       "credits": "Pengakuan & Kredit",
       "contactSupport": "Hubungi Dukungan",
@@ -288,6 +296,14 @@
       "active": "Active",
       "platform": "Platform",
       "features": "Featured Features",
+      "featureFastTitle": "Super Fast",
+      "featureFastDesc": "High-speed servers for instant results.",
+      "featureSecureTitle": "100% Secure",
+      "featureSecureDesc": "Your data is processed with user privacy in mind.",
+      "featureHdTitle": "HD Quality",
+      "featureHdDesc": "Supports high resolution based on available sources.",
+      "featureMultiPlatformTitle": "Multi-Platform",
+      "featureMultiPlatformDesc": "One tool for various social media platforms.",
       "developedBy": "Developed by",
       "credits": "Credits",
       "contactSupport": "Contact Support",
@@ -310,7 +326,19 @@
       "localStorage": "Penyimpanan Lokal",
       "localStorageDesc": "Riwayat unduhan disimpan secara lokal di perangkat Anda, bukan di server kami.",
       "securityProtocol": "Protokol Keamanan",
+      "sslTlsDesc": "Enkripsi transmisi data tingkat tinggi.",
+      "aes256Desc": "Standar enkripsi data saat disimpan.",
       "yourDataRights": "Hak Data Anda",
+      "faqItems": [
+        {
+          "question": "Apakah Media Tools menyimpan file saya?",
+          "answer": "Tidak. File diunduh langsung ke storage Anda dan tidak disimpan di server Media Tools."
+        },
+        {
+          "question": "Bagaimana dengan data login sosial media?",
+          "answer": "Media Tools tidak menyimpan kredensial login Anda. Proses autentikasi dikelola langsung oleh platform resmi terkait."
+        }
+      ],
       "exportMyData": "Ekspor Data Saya",
       "securityFaq": "Tanya Jawab Keamanan",
       "contactSecurityTeam": "Hubungi Tim Keamanan",
@@ -332,7 +360,19 @@
       "localStorage": "Local Storage",
       "localStorageDesc": "Download history is stored locally on your device, not on our servers.",
       "securityProtocol": "Security Protocols",
+      "sslTlsDesc": "High-level data transmission encryption.",
+      "aes256Desc": "Data encryption standard for stored data.",
       "yourDataRights": "Your Data Rights",
+      "faqItems": [
+        {
+          "question": "Does Media Tools store my files?",
+          "answer": "No. Files are downloaded directly to your storage and are not kept on Media Tools servers."
+        },
+        {
+          "question": "What about social media login data?",
+          "answer": "Media Tools does not store your login credentials. Authentication is handled directly by each official platform."
+        }
+      ],
       "exportMyData": "Export My Data",
       "securityFaq": "Security FAQ",
       "contactSecurityTeam": "Contact Security Team",
@@ -399,6 +439,208 @@
       "requesting": "Requesting...",
       "continue": "Continue",
       "skipForNow": "Skip for now"
+    }
+  },
+  "dialogDonasi": {
+    "id": {
+      "transferGuide": "Panduan Transfer",
+      "bank": "Bank",
+      "eWallet": "E-Wallet",
+      "transferToGopay": "Transfer ke GoPay",
+      "copy": "Salin",
+      "supportedEWallet": "E-Wallet yang didukung",
+      "eWalletStepsTitle": "Langkah di E-Wallet",
+      "eWalletStepsOpenApp": "Buka aplikasi E-Wallet Anda (mis. GoPay:",
+      "eWalletStepsPay": "Klik Bayar / Pay / Scan.",
+      "eWalletStepsConfirm": "Scan QR code dan konfirmasi nominal donasi.",
+      "bankGuides": [
+        {
+          "id": "bca",
+          "label": "BCA",
+          "title": "1. Dari bank BCA",
+          "steps": [
+            { "text": "Buka aplikasi myBCA / m-BCA / ATM BCA." },
+            { "text": "Pilih menu Transfer > ke Virtual Account / e-Wallet." },
+            { "text": "Pilih tujuan GoPay (jika ada) atau masukkan kode sesuai petunjuk di aplikasi bank." },
+            { "text": "Masukkan nomor GoPay:", "highlightNumber": true },
+            { "text": "Masukkan nominal donasi sesuai yang tertera." },
+            { "text": "Periksa detail, lalu konfirmasi dan selesaikan transaksi." }
+          ]
+        },
+        {
+          "id": "bri",
+          "label": "BRI",
+          "title": "2. Dari bank BRI",
+          "steps": [
+            { "text": "Buka BRImo / Internet Banking / ATM BRI." },
+            { "text": "Pilih menu Pembayaran / e-Wallet / BRIVA." },
+            { "text": "Pilih atau cari tujuan GoPay." },
+            { "text": "Masukkan nomor GoPay:", "highlightNumber": true },
+            { "text": "Isi nominal donasi, lalu lanjutkan hingga pembayaran berhasil." }
+          ]
+        },
+        {
+          "id": "bni",
+          "label": "BNI",
+          "title": "3. Dari bank BNI",
+          "steps": [
+            { "text": "Buka aplikasi BNI Mobile Banking atau gunakan ATM BNI." },
+            { "text": "Pilih menu e-Wallet / Pembayaran." },
+            { "text": "Pilih tujuan GoPay bila tersedia." },
+            { "text": "Masukkan nomor GoPay:", "highlightNumber": true },
+            { "text": "Masukkan jumlah donasi dan konfirmasi transaksi." }
+          ]
+        },
+        {
+          "id": "mandiri",
+          "label": "Mandiri",
+          "title": "4. Dari bank Mandiri",
+          "steps": [
+            { "text": "Buka Livin' by Mandiri atau ATM Mandiri." },
+            { "text": "Pilih menu Bayar / e-Wallet." },
+            { "text": "Pilih GoPay sebagai tujuan." },
+            { "text": "Masukkan nomor GoPay:", "highlightNumber": true },
+            { "text": "Isi nominal donasi dan selesaikan pembayaran." }
+          ]
+        },
+        {
+          "id": "lain",
+          "label": "Bank lain",
+          "title": "5. Dari bank lain",
+          "steps": [
+            { "text": "Buka aplikasi mobile banking / internet banking / ATM bank kamu." },
+            { "text": "Cari menu e-Wallet / Dompet Digital / Virtual Account." },
+            { "text": "Pilih tujuan GoPay bila tersedia." },
+            { "text": "Masukkan nomor GoPay:", "highlightNumber": true },
+            { "text": "Isi nominal donasi lalu lanjutkan hingga transaksi berhasil." }
+          ]
+        }
+      ]
+    },
+    "en": {
+      "transferGuide": "Transfer Guide",
+      "bank": "Bank",
+      "eWallet": "E-Wallet",
+      "transferToGopay": "Transfer to GoPay",
+      "copy": "Copy",
+      "supportedEWallet": "Supported E-Wallets",
+      "eWalletStepsTitle": "E-Wallet Steps",
+      "eWalletStepsOpenApp": "Open your E-Wallet app (e.g. GoPay:",
+      "eWalletStepsPay": "Tap Pay / Scan.",
+      "eWalletStepsConfirm": "Scan the QR code and confirm the donation amount.",
+      "bankGuides": [
+        {
+          "id": "bca",
+          "label": "BCA",
+          "title": "1. From BCA bank",
+          "steps": [
+            { "text": "Open myBCA / m-BCA / BCA ATM." },
+            { "text": "Select Transfer > to Virtual Account / e-Wallet." },
+            { "text": "Choose GoPay destination (if available) or enter the code shown in your banking app." },
+            { "text": "Enter GoPay number:", "highlightNumber": true },
+            { "text": "Enter the donation amount shown." },
+            { "text": "Review details, then confirm and complete the transaction." }
+          ]
+        },
+        {
+          "id": "bri",
+          "label": "BRI",
+          "title": "2. From BRI bank",
+          "steps": [
+            { "text": "Open BRImo / Internet Banking / BRI ATM." },
+            { "text": "Select Payment / e-Wallet / BRIVA menu." },
+            { "text": "Choose or search for GoPay destination." },
+            { "text": "Enter GoPay number:", "highlightNumber": true },
+            { "text": "Fill in donation amount, then continue until payment succeeds." }
+          ]
+        },
+        {
+          "id": "bni",
+          "label": "BNI",
+          "title": "3. From BNI bank",
+          "steps": [
+            { "text": "Open BNI Mobile Banking app or use BNI ATM." },
+            { "text": "Select e-Wallet / Payment menu." },
+            { "text": "Select GoPay destination if available." },
+            { "text": "Enter GoPay number:", "highlightNumber": true },
+            { "text": "Enter donation amount and confirm transaction." }
+          ]
+        },
+        {
+          "id": "mandiri",
+          "label": "Mandiri",
+          "title": "4. From Mandiri bank",
+          "steps": [
+            { "text": "Open Livin' by Mandiri or Mandiri ATM." },
+            { "text": "Select Pay / e-Wallet menu." },
+            { "text": "Choose GoPay as destination." },
+            { "text": "Enter GoPay number:", "highlightNumber": true },
+            { "text": "Enter donation amount and complete payment." }
+          ]
+        },
+        {
+          "id": "lain",
+          "label": "Other bank",
+          "title": "5. From other banks",
+          "steps": [
+            { "text": "Open your mobile banking / internet banking / ATM app." },
+            { "text": "Find e-Wallet / Digital Wallet / Virtual Account menu." },
+            { "text": "Select GoPay destination if available." },
+            { "text": "Enter GoPay number:", "highlightNumber": true },
+            { "text": "Enter donation amount, then continue until transaction succeeds." }
+          ]
+        }
+      ]
+    }
+  },
+  "downloadProgressModal": {
+    "id": {
+      "completed": "Selesai",
+      "downloading": "Mengunduh",
+      "download": "Unduhan",
+      "inProgress": "Sedang berlangsung",
+      "speed": "Kecepatan",
+      "remaining": "Sisa",
+      "resumeDownload": "LANJUTKAN DOWNLOAD",
+      "pauseDownload": "JEDA DOWNLOAD",
+      "cancel": "BATAL"
+    },
+    "en": {
+      "completed": "Completed",
+      "downloading": "Downloading",
+      "download": "Download",
+      "inProgress": "In progress",
+      "speed": "Speed",
+      "remaining": "Remaining",
+      "resumeDownload": "RESUME DOWNLOAD",
+      "pauseDownload": "PAUSE DOWNLOAD",
+      "cancel": "CANCEL"
+    }
+  },
+  "downloadSuccessModal": {
+    "id": {
+      "backToHome": "Kembali ke Beranda",
+      "doneTitle": "Selesai!",
+      "doneMessage": "Media berhasil diunduh ke galeri perangkat Anda.",
+      "facebookVideo": "Video Facebook",
+      "defaultFileName": "MediaTools_File.mp4",
+      "speed": "Kecepatan",
+      "time": "Waktu",
+      "format": "Format",
+      "defaultFormat": "MP4",
+      "openFile": "Buka File"
+    },
+    "en": {
+      "backToHome": "Back to Home",
+      "doneTitle": "Done!",
+      "doneMessage": "Media has been downloaded to your device gallery.",
+      "facebookVideo": "Facebook Video",
+      "defaultFileName": "MediaTools_File.mp4",
+      "speed": "Speed",
+      "time": "Time",
+      "format": "Format",
+      "defaultFormat": "MP4",
+      "openFile": "Open File"
     }
   },
   "welcome": {

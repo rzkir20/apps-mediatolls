@@ -19,9 +19,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-import { BANK_GUIDES, GOPAY_NUMBER } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
 
 import { bottomSheet, socialPalette } from "@/lib/pallate";
+
+export const GOPAY_NUMBER = "081398632939";
 
 const EWALLETS = [
   "GOPAY",
@@ -33,6 +37,26 @@ const EWALLETS = [
 ] as const;
 
 type GuideTab = "bank" | "ewallet";
+type DonasiGuideStep = { text: string; highlightNumber?: boolean };
+type DonasiGuide = {
+  id: string;
+  label: string;
+  title: string;
+  steps: DonasiGuideStep[];
+};
+type DialogDonasiCopy = {
+  transferGuide: string;
+  bank: string;
+  eWallet: string;
+  transferToGopay: string;
+  copy: string;
+  supportedEWallet: string;
+  eWalletStepsTitle: string;
+  eWalletStepsOpenApp: string;
+  eWalletStepsPay: string;
+  eWalletStepsConfirm: string;
+  bankGuides: DonasiGuide[];
+};
 
 export type DialogDonasiProps = {
   visible: boolean;
@@ -42,7 +66,10 @@ export type DialogDonasiProps = {
 export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
   const insets = useSafeAreaInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const { language } = useLanguage();
+  const copy = languageData.dialogDonasi[language] as DialogDonasiCopy;
   const [guideTab, setGuideTab] = useState<GuideTab>("bank");
+  const bankGuides = copy.bankGuides as DonasiGuide[];
 
   useEffect(() => {
     if (visible) setGuideTab("bank");
@@ -99,7 +126,7 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
           >
             <View className="flex-row items-center justify-between px-5 pt-5 pb-3 border-b border-white/10">
               <Text className="text-lg font-extrabold text-white">
-                Panduan Transfer
+                {copy.transferGuide}
               </Text>
               <Pressable
                 onPress={onRequestClose}
@@ -118,8 +145,8 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
               <View className="flex-row p-1 rounded-2xl bg-white/5 border border-white/10">
                 {(
                   [
-                    { key: "bank" as const, label: "Bank" },
-                    { key: "ewallet" as const, label: "E-Wallet" },
+                    { key: "bank" as const, label: copy.bank },
+                    { key: "ewallet" as const, label: copy.eWallet },
                   ] as const
                 ).map(({ key, label }) => {
                   const active = guideTab === key;
@@ -167,11 +194,11 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
                 {guideTab === "bank" ? (
                   <>
                     <Text className="text-social-accent text-[10px] font-black uppercase tracking-[0.2em]">
-                      Transfer ke GoPay
+                      {copy.transferToGopay}
                     </Text>
 
                     <View className="rounded-[22px] border border-white/10 bg-white/5 overflow-hidden">
-                      {BANK_GUIDES.map((guide, i) => (
+                      {bankGuides.map((guide, i) => (
                         <View
                           key={guide.id}
                           className={`px-4 flex flex-col gap-2 py-4 ${
@@ -205,7 +232,7 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
                                       color={socialPalette.accent}
                                     />
                                     <Text className="text-[10px] font-black uppercase tracking-wider">
-                                      Salin
+                                      {copy.copy}
                                     </Text>
                                   </Pressable>
                                 </View>
@@ -219,7 +246,7 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
                 ) : (
                   <>
                     <Text className="text-social-accent text-[10px] font-black uppercase tracking-[0.2em]">
-                      E-Wallet yang didukung
+                      {copy.supportedEWallet}
                     </Text>
 
                     <View className="rounded-[22px] border border-white/10 bg-white/5 overflow-hidden">
@@ -255,11 +282,11 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
 
                     <View className="p-5 rounded-[22px] border border-white/10 bg-white/5">
                       <Text className="text-base font-black uppercase tracking-[0.15em] text-white mb-3">
-                        Langkah di E-Wallet
+                        {copy.eWalletStepsTitle}
                       </Text>
 
                       <Text className="text-base leading-6 text-social-slate-500">
-                        1. Buka aplikasi E-Wallet Anda (mis. GoPay:{" "}
+                        1. {copy.eWalletStepsOpenApp}{" "}
                         <Text
                           className="text-social-accent font-bold"
                           selectable
@@ -267,8 +294,9 @@ export function DialogDonasi({ visible, onRequestClose }: DialogDonasiProps) {
                           {GOPAY_NUMBER}
                         </Text>
                         ).{"\n"}
-                        2. Klik Bayar / Pay / Scan.{"\n"}
-                        3. Scan QR code dan konfirmasi nominal donasi.
+                        2. {copy.eWalletStepsPay}
+                        {"\n"}
+                        3. {copy.eWalletStepsConfirm}
                       </Text>
                     </View>
                   </>

@@ -6,6 +6,8 @@ import Svg, { Circle } from "react-native-svg";
 
 import { ActivityIndicator, Modal, Pressable, Text, View } from "react-native";
 
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 import { socialPalette } from "@/lib/pallate";
 
 function formatPercent(p: number) {
@@ -32,14 +34,16 @@ export function DownloadProgressModal({
   onCancel,
   onRequestClose,
 }: DownloadProgressModalProps) {
+  const { language } = useLanguage();
+  const copy = languageData.downloadProgressModal[language];
   const pct = formatPercent(progressPercent);
   const radius = 86;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - pct / 100);
 
   const effectivePillText =
-    statusPillText ?? (pct >= 100 ? "Completed" : "Downloading");
-  const effectiveSubText = statusSubText ?? "Completed";
+    statusPillText ?? (pct >= 100 ? copy.completed : copy.downloading);
+  const effectiveSubText = statusSubText ?? copy.completed;
 
   return (
     <Modal
@@ -60,7 +64,7 @@ export function DownloadProgressModal({
               className="text-xl font-bold text-white w-full px-4 text-center"
               numberOfLines={2}
             >
-              {fileName || "Download"}
+              {fileName || copy.download}
             </Text>
           </View>
 
@@ -93,7 +97,7 @@ export function DownloadProgressModal({
                 {pct}%
               </Text>
               <Text className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">
-                {pct >= 100 ? effectiveSubText : "In progress"}
+                {pct >= 100 ? effectiveSubText : copy.inProgress}
               </Text>
             </View>
           </View>
@@ -101,7 +105,7 @@ export function DownloadProgressModal({
           <View className="w-full grid grid-cols-2 gap-4 mb-10">
             <View className="p-4 rounded-3xl bg-white/5 border border-white/5 text-center">
               <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">
-                Speed
+                {copy.speed}
               </Text>
               {speedText ? (
                 <Text className="text-white font-bold">{speedText}</Text>
@@ -114,7 +118,7 @@ export function DownloadProgressModal({
 
             <View className="p-4 rounded-3xl bg-white/5 border border-white/5 text-center">
               <Text className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mb-1">
-                Remaining
+                {copy.remaining}
               </Text>
               <Text className="text-white font-bold">
                 {remainingText ?? "--:--"}
@@ -152,7 +156,7 @@ export function DownloadProgressModal({
                   }}
                 >
                   <Text className="text-white font-bold text-center">
-                    {pauseLabel ?? "RESUME DOWNLOAD"}
+                    {pauseLabel ?? copy.resumeDownload}
                   </Text>
                 </LinearGradient>
               ) : (
@@ -168,7 +172,7 @@ export function DownloadProgressModal({
                   }}
                 >
                   <Text className="text-white font-bold text-center">
-                    {pauseLabel ?? "PAUSE DOWNLOAD"}
+                    {pauseLabel ?? copy.pauseDownload}
                   </Text>
                 </LinearGradient>
               )}
@@ -180,7 +184,7 @@ export function DownloadProgressModal({
               className="w-full py-4 rounded-2xl bg-white/5 flex-row items-center justify-center gap-3 active:opacity-90 disabled:opacity-40"
             >
               <Text className="text-slate-400 font-bold">
-                {cancelLabel ?? "CANCEL"}
+                {cancelLabel ?? copy.cancel}
               </Text>
             </Pressable>
           </View>

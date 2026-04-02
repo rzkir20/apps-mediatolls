@@ -27,18 +27,7 @@ export default function SettingsPrivacyScreen() {
   const { language } = useLanguage();
   const copy = languageData.settingsPrivacy[language];
 
-  const faqItems = [
-    {
-      question: "Apakah Media Tools menyimpan file saya?",
-      answer:
-        "Tidak. File diunduh langsung ke storage Anda dan tidak disimpan di server Media Tools.",
-    },
-    {
-      question: "Bagaimana dengan data login sosial media?",
-      answer:
-        "Media Tools tidak menyimpan kredensial login Anda. Proses autentikasi dikelola langsung oleh platform resmi terkait.",
-    },
-  ];
+  const faqItems = copy.faqItems;
 
   const openUrl = (url: string) => {
     void Linking.openURL(url);
@@ -128,7 +117,7 @@ export default function SettingsPrivacyScreen() {
                   SSL/TLS
                 </Text>
                 <Text className="text-[10px] text-slate-500 leading-normal">
-                  Enkripsi transmisi data tingkat tinggi.
+                  {copy.sslTlsDesc}
                 </Text>
               </View>
               <View className="flex-1 rounded-3xl p-5 border border-white/10 bg-white/[0.03]">
@@ -137,7 +126,7 @@ export default function SettingsPrivacyScreen() {
                   AES-256
                 </Text>
                 <Text className="text-[10px] text-slate-500 leading-normal">
-                  Standar enkripsi data saat disimpan.
+                  {copy.aes256Desc}
                 </Text>
               </View>
             </View>

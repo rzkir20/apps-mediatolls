@@ -8,6 +8,8 @@ import { socialPalette } from "@/lib/pallate";
 
 import { getPlatformAlbumName } from "@/components/ui/helper";
 
+const DEVICES_DEBUG = __DEV__;
+
 export type SortKey = "latest" | "oldest" | "size";
 
 type Category = {
@@ -165,23 +167,74 @@ export function useDevicesController() {
     const load = async () => {
       try {
         setCategoriesLoading(true);
-        const perm = await MediaLibrary.getPermissionsAsync();
+        const currentPerm = await MediaLibrary.getPermissionsAsync();
         if (cancelled) return;
 
-        if (perm.status !== "granted") {
+        const perm = currentPerm.granted
+          ? currentPerm
+          : await MediaLibrary.requestPermissionsAsync();
+
+        if (cancelled) return;
+
+        if (!perm.granted) {
+          if (DEVICES_DEBUG) {
+            console.log("[System][categories] MediaLibrary permission denied", {
+              canAskAgain: perm.canAskAgain,
+              status: perm.status,
+            });
+          }
           setCategories([]);
           return;
+        }
+
+        const albums = await MediaLibrary.getAlbumsAsync();
+        if (cancelled) return;
+        if (DEVICES_DEBUG) {
+          console.log(
+            "[System][categories] Albums detected",
+            albums.map((a) => ({
+              id: a.id,
+              title: a.title,
+              assetCount: a.assetCount,
+            })),
+          );
         }
 
         const albumResults = await Promise.all(
           platformDefs.map(async (p) => {
             const albumName = getPlatformAlbumName(p.key);
-            const album = await MediaLibrary.getAlbumAsync(albumName);
-            return { p, albumName, album };
+            const directAlbum = await MediaLibrary.getAlbumAsync(albumName);
+            if (directAlbum) {
+              return { p, album: directAlbum };
+            }
+
+            const normalizedTarget = albumName.toLowerCase();
+            const fallbackAlbum = albums.find((a) => {
+              const title = a.title.toLowerCase();
+              const byExact = title === normalizedTarget;
+              const byPlatformOnly = title === p.key;
+              const bySuffix = title.endsWith(`/${p.key}`);
+              const byLoose =
+                title.includes("media tools") && title.includes(p.key);
+              return byExact || byPlatformOnly || bySuffix || byLoose;
+            });
+
+            return { p, album: fallbackAlbum ?? null };
           }),
         );
 
         if (cancelled) return;
+        if (DEVICES_DEBUG) {
+          console.log(
+            "[System][categories] Match results",
+            albumResults.map((r) => ({
+              key: r.p.key,
+              expectedAlbumName: getPlatformAlbumName(r.p.key),
+              matchedTitle: r.album?.title ?? null,
+              assetCount: r.album?.assetCount ?? 0,
+            })),
+          );
+        }
 
         const next: Category[] = albumResults
           .filter((r) => r.album != null)
@@ -200,6 +253,9 @@ export function useDevicesController() {
 
         setCategories(next);
       } catch {
+        if (DEVICES_DEBUG) {
+          console.log("[System][categories] Failed loading categories");
+        }
         if (!cancelled) setCategories([]);
       } finally {
         if (!cancelled) setCategoriesLoading(false);

@@ -128,19 +128,19 @@ export default function SettingsAboutScreen() {
               <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03]">
                 <IconSymbol name="zap" size={20} color="#ff3d57" />
                 <Text className="text-base font-black text-white mt-2">
-                  Super Cepat
+                  {copy.featureFastTitle}
                 </Text>
                 <Text className="text-base text-slate-500 leading-tight mt-1">
-                  Server berkecepatan tinggi untuk hasil instan.
+                  {copy.featureFastDesc}
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03]">
                 <IconSymbol name="lock" size={20} color="#22d3ee" />
                 <Text className="text-base font-black text-white mt-2">
-                  100% Aman
+                  {copy.featureSecureTitle}
                 </Text>
                 <Text className="text-base text-slate-500 leading-tight mt-1">
-                  Data Anda diproses dengan fokus pada privasi pengguna.
+                  {copy.featureSecureDesc}
                 </Text>
               </View>
             </View>
@@ -148,19 +148,19 @@ export default function SettingsAboutScreen() {
               <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03]">
                 <IconSymbol name="quality" size={20} color="#bc1888" />
                 <Text className="text-base font-black text-white mt-2">
-                  Kualitas HD
+                  {copy.featureHdTitle}
                 </Text>
                 <Text className="text-base text-slate-500 leading-tight mt-1">
-                  Mendukung resolusi tinggi sesuai sumber yang tersedia.
+                  {copy.featureHdDesc}
                 </Text>
               </View>
               <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03]">
                 <IconSymbol name="layers" size={20} color="#fb923c" />
                 <Text className="text-base font-black text-white mt-2">
-                  Multi-Platform
+                  {copy.featureMultiPlatformTitle}
                 </Text>
                 <Text className="text-base text-slate-500 leading-tight mt-1">
-                  Satu alat untuk berbagai platform sosial media.
+                  {copy.featureMultiPlatformDesc}
                 </Text>
               </View>
             </View>
