@@ -5,9 +5,13 @@ import { Stack, useRouter } from "expo-router";
 import LottieView from "lottie-react-native";
 
 import { Linking, Text, TouchableOpacity, View } from "react-native";
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 
 export default function NotFoundScreen() {
   const router = useRouter();
+  const { language } = useLanguage();
+  const copy = languageData.notFound[language];
 
   const handleBackToHome = () => {
     router.replace("/");
@@ -15,13 +19,13 @@ export default function NotFoundScreen() {
 
   const handleContactUs = () => {
     Linking.openURL(
-      "http://wa.me/+6283150102523?text=Halo, saya membutuhkan bantuan",
+      `http://wa.me/+6283150102523?text=${encodeURIComponent(copy.whatsappText)}`,
     );
   };
 
   return (
     <>
-      <Stack.Screen options={{ title: "Oops!" }} />
+      <Stack.Screen options={{ title: copy.stackTitle }} />
       <View className="flex-1 items-center justify-center">
         <View className="flex-row gap-2 items-center mb-4">
           <Text className="text-[64px] font-bold text-gray-300">4</Text>
@@ -36,11 +40,11 @@ export default function NotFoundScreen() {
         </View>
 
         <Text className="text-[20px] font-semibold text-gray-300 mb-1 text-center">
-          Oops! We can&#39;t find that page.
+          {copy.title}
         </Text>
 
         <Text className="text-[14px] text-gray-300 mb-8 text-center">
-          The page you&#39;re looking for doesn&#39;t seem to exist.
+          {copy.subtitle}
         </Text>
 
         <TouchableOpacity
@@ -48,7 +52,7 @@ export default function NotFoundScreen() {
           onPress={handleBackToHome}
         >
           <Text className="text-white text-[16px] font-semibold">
-            Back to home
+            {copy.backToHome}
           </Text>
         </TouchableOpacity>
 
@@ -56,9 +60,9 @@ export default function NotFoundScreen() {
           className="text-[14px] text-gray-300 text-center"
           onPress={handleContactUs}
         >
-          Need help?{" "}
+          {copy.needHelp}{" "}
           <Text className="text-accent-primary font-bold underline">
-            Contact Us
+            {copy.contactUs}
           </Text>
         </Text>
       </View>

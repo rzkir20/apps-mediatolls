@@ -7,6 +7,8 @@ import { Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 
 import { socialPalette } from "@/lib/pallate";
 
@@ -14,37 +16,11 @@ const BG = socialPalette.bg;
 
 const ACCENT = socialPalette.accent;
 
-const FAQ_ITEMS = [
-  {
-    question: "Platform apa saja yang didukung Media Tools?",
-    answer:
-      "Saat ini Media Tools mendukung TikTok, Instagram, Facebook, YouTube, dan Threads untuk unduhan konten publik.",
-  },
-  {
-    question: "Kenapa proses unduhan terkadang gagal?",
-    answer:
-      "Biasanya karena link tidak valid, konten privat, atau server sumber sedang membatasi akses sementara.",
-  },
-  {
-    question: "Di mana file hasil unduhan disimpan?",
-    answer:
-      "File otomatis disimpan ke folder Media Tools di perangkat Anda. Lokasinya menyesuaikan platform dan izin yang diberikan.",
-  },
-  {
-    question: "Apakah saya bisa memilih format MP3/MP4?",
-    answer:
-      "Ya, untuk platform yang mendukung, Anda bisa memilih format MP4 video atau MP3 audio sebelum mengunduh.",
-  },
-  {
-    question: "Apakah aplikasi ini gratis digunakan?",
-    answer:
-      "Ya, fitur utama Media Tools dapat digunakan secara gratis untuk kebutuhan personal.",
-  },
-];
-
 export default function SettingsFaqsScreen() {
   const insets = useSafeAreaInsets();
   const [activeFaq, setActiveFaq] = React.useState(0);
+  const { language } = useLanguage();
+  const copy = languageData.faqs[language];
   const openUrl = (url: string) => {
     void Linking.openURL(url);
   };
@@ -67,10 +43,10 @@ export default function SettingsFaqsScreen() {
               <IconSymbol name="search" size={34} color="#fff" />
             </LinearGradient>
             <Text className="text-3xl font-cabinet font-black tracking-tight text-white text-center">
-              Help <Text style={{ color: ACCENT }}>Center</Text>
+              {copy.title} <Text style={{ color: ACCENT }}>{copy.titleAccent}</Text>
             </Text>
             <Text className="text-slate-400 text-sm font-medium mt-2 text-center">
-              Jawaban cepat untuk pertanyaan paling sering diajukan.
+              {copy.subtitle}
             </Text>
           </View>
 
@@ -78,10 +54,10 @@ export default function SettingsFaqsScreen() {
             <View className="w-2 h-2 rounded-full bg-cyan-400" />
             <View className="flex-1">
               <Text className="text-base font-black uppercase tracking-[0.2em] text-cyan-300">
-                Pusat Bantuan Aktif
+                {copy.activeHelpTitle}
               </Text>
               <Text className="text-xs text-slate-500 font-medium">
-                Cek panduan cepat sebelum menghubungi tim dukungan.
+                {copy.activeHelpDescription}
               </Text>
             </View>
             <IconSymbol name="checkmark" size={18} color="#22d3ee" />
@@ -89,10 +65,10 @@ export default function SettingsFaqsScreen() {
 
           <View>
             <Text className="text-base font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Pertanyaan Populer
+              {copy.popularQuestions}
             </Text>
             <View className="gap-3">
-              {FAQ_ITEMS.map((item, index) => (
+              {copy.items.map((item, index) => (
                 <Pressable
                   key={item.question}
                   onPress={() =>
@@ -124,17 +100,10 @@ export default function SettingsFaqsScreen() {
 
           <View>
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Kategori Bantuan
+              {copy.helpCategories}
             </Text>
             <View className="flex-row flex-wrap gap-2">
-              {[
-                "Unduhan",
-                "Akun",
-                "Format File",
-                "Troubleshooting",
-                "Privasi",
-                "Performa",
-              ].map((item) => (
+              {copy.categories.map((item) => (
                 <View
                   key={item}
                   className="px-3 py-2 rounded-xl border border-white/10 bg-white/[0.03]"
@@ -149,11 +118,10 @@ export default function SettingsFaqsScreen() {
 
           <View className="rounded-[28px] p-5 border border-white/10 bg-white/[0.03]">
             <Text className="text-sm font-black text-white mb-2">
-              Masih butuh bantuan?
+              {copy.needMoreHelp}
             </Text>
             <Text className="text-[12px] leading-relaxed text-slate-500 mb-4">
-              Jika jawaban yang Anda cari belum tersedia, hubungi tim kami untuk
-              mendapatkan bantuan langsung.
+              {copy.needMoreHelpDescription}
             </Text>
             <Pressable
               onPress={() => openUrl("mailto:hallo@rizkiramadhan.web.id")}
@@ -167,7 +135,7 @@ export default function SettingsFaqsScreen() {
               >
                 <IconSymbol name="paperplane.fill" size={16} color="#fff" />
                 <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
-                  Hubungi Support
+                  {copy.contactSupport}
                 </Text>
               </LinearGradient>
             </Pressable>

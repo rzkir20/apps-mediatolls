@@ -19,16 +19,18 @@ import { Header } from "@/components/social/Header";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
-import {
-  PLATFORM_TABS,
-  getPlatformTabIndex,
-} from "@/components/ui/helper";
+import { PLATFORM_TABS, getPlatformTabIndex } from "@/components/ui/helper";
 
 import { socialPalette } from "@/lib/pallate";
+
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
 
 const SOCIAL_TAB_COUNT = PLATFORM_TABS.length;
 
 export default function SocialLayout() {
+  const { language } = useLanguage();
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const pathnameRef = useRef(pathname);
@@ -41,6 +43,8 @@ export default function SocialLayout() {
   tabIndexSV.value = idx;
   const prevTab = idx > 0 ? PLATFORM_TABS[idx - 1] : null;
   const nextTab = idx < SOCIAL_TAB_COUNT - 1 ? PLATFORM_TABS[idx + 1] : null;
+  const prevLabel = languageData.socialLayout[language].previous;
+  const nextLabel = languageData.socialLayout[language].next;
 
   const navigateBySwipe = useCallback(
     (delta: number) => {
@@ -124,14 +128,10 @@ export default function SocialLayout() {
                     size={16}
                     color={socialPalette.accent}
                   />
-                  <IconSymbol
-                    name={prevTab.icon}
-                    size={22}
-                    color="#ffffff"
-                  />
+                  <IconSymbol name={prevTab.icon} size={22} color="#ffffff" />
                   <View>
                     <Text className="text-[9px] font-black uppercase tracking-widest text-white/50">
-                      Sebelumnya
+                      {prevLabel}
                     </Text>
                     <Text
                       className="text-[11px] font-black text-white"
@@ -153,7 +153,7 @@ export default function SocialLayout() {
                 <View className="flex-row items-center gap-2 rounded-2xl border border-white/15 bg-black/55 px-3 py-2.5">
                   <View className="items-end">
                     <Text className="text-[9px] font-black uppercase tracking-widest text-white/50">
-                      Berikutnya
+                      {nextLabel}
                     </Text>
                     <Text
                       className="text-[11px] font-black text-white"
@@ -162,11 +162,7 @@ export default function SocialLayout() {
                       {nextTab.label}
                     </Text>
                   </View>
-                  <IconSymbol
-                    name={nextTab.icon}
-                    size={22}
-                    color="#ffffff"
-                  />
+                  <IconSymbol name={nextTab.icon} size={22} color="#ffffff" />
                   <IconSymbol
                     name="arrow.forward"
                     size={16}

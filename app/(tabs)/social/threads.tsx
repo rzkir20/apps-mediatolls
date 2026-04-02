@@ -30,9 +30,15 @@ import { socialPalette } from "@/lib/pallate";
 
 import { useThreadsController } from "@/services/threads.service";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 export default function ThreadsScreen() {
   const insets = useSafeAreaInsets();
   const tabBarOffset = 88 + insets.bottom;
+  const { language } = useLanguage();
+  const copy = languageData.socialThreads[language];
 
   const c = useThreadsController();
   const [previewWidth, setPreviewWidth] = useState(0);
@@ -49,10 +55,10 @@ export default function ThreadsScreen() {
     <View className="flex-1 bg-social-bg">
       <DeleteConfirmModal
         visible={c.isConfirmClearOpen}
-        title="Hapus semua riwayat?"
-        description="Semua riwayat download Threads akan dihapus permanen dan tidak bisa dikembalikan."
-        cancelLabel="Batal"
-        confirmLabel="Hapus"
+        title={copy.deleteHistoryTitle}
+        description={copy.deleteHistoryDescription}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.delete}
         iconName="history.clear"
         iconColor="#f97373"
         onCancel={c.closeConfirmClearHistory}
@@ -69,7 +75,8 @@ export default function ThreadsScreen() {
         speedText={c.downloadSpeedText ?? undefined}
         remainingText={c.downloadRemainingText ?? undefined}
         downloadedTotalText={
-          c.downloadTotalText ?? (c.isSaving ? "Saving..." : (c.saveText ?? ""))
+          c.downloadTotalText ??
+          (c.isSaving ? copy.preparingPreview : (c.saveText ?? ""))
         }
         isPaused={c.isDownloadPaused}
         isSaving={c.isSaving}
@@ -94,7 +101,7 @@ export default function ThreadsScreen() {
         speedText={c.downloadSpeedText ?? undefined}
         durationText={c.downloadRemainingText ?? "00:00"}
         formatText={activeSlide?.type === "video" ? "MP4" : "JPG"}
-        primaryActionLabel="Tutup"
+        primaryActionLabel={copy.close}
         onPrimaryAction={c.closeDownloadSuccessModal}
         onBack={c.closeDownloadSuccessModal}
         onRequestClose={c.closeDownloadSuccessModal}
@@ -102,7 +109,7 @@ export default function ThreadsScreen() {
 
       <Dialog
         visible={isPreviewOpen}
-        title="Preview"
+        title={copy.preview}
         onRequestClose={() => setIsPreviewOpen(false)}
         height="82%"
         contentStyle={{ backgroundColor: "#000" }}
@@ -132,7 +139,7 @@ export default function ThreadsScreen() {
                 >
                   <IconSymbol name="download" size={18} color="#fff" />
                   <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                    Download Slide
+                    {copy.downloadSlide}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -142,7 +149,7 @@ export default function ThreadsScreen() {
                 className="px-5 rounded-2xl bg-white/5 border border-white/10 items-center justify-center active:opacity-90"
               >
                 <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                  Close
+                  {copy.close}
                 </Text>
               </Pressable>
             </View>
@@ -189,12 +196,12 @@ export default function ThreadsScreen() {
           ) : c.isFetching ? (
             <LoadingMediaPlayer
               progressPercent={45}
-              statusText="Menyiapkan preview..."
+              statusText={copy.preparingPreview}
             />
           ) : (
             <View className="flex-1 items-center justify-center">
               <Text className="text-xs font-bold text-social-slate-500">
-                Belum ada preview.
+                {copy.noPreviewYet}
               </Text>
             </View>
           )}
@@ -221,16 +228,17 @@ export default function ThreadsScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              Threads Platform
+              {copy.platform}
             </Text>
           </View>
 
           <Text className="font-cabinet text-3xl font-black tracking-tight mb-2 text-white">
-            Download Threads {"\n"}
-            <Text className="text-social-accent">Video/Image</Text>
+            {copy.title1}
+            {"\n"}
+            <Text className="text-social-accent">{copy.title2}</Text>
           </Text>
           <Text className="text-social-slate-500 text-sm font-medium">
-            Unduh video dan gambar dari Threads dengan kualitas terbaik.
+            {copy.subtitle}
           </Text>
         </View>
 
@@ -247,7 +255,7 @@ export default function ThreadsScreen() {
               <TextInput
                 value={c.url}
                 onChangeText={c.setUrl}
-                placeholder="Tempel link Threads di sini..."
+                placeholder={copy.inputPlaceholder}
                 placeholderTextColor={socialPalette.slate600}
                 className="w-full h-16 pl-12 pr-4 rounded-2xl bg-white/[0.03] border border-white/10 text-sm font-medium text-white"
                 autoCapitalize="none"
@@ -266,7 +274,7 @@ export default function ThreadsScreen() {
                   color={socialPalette.slate500}
                 />
                 <Text className="font-bold text-xs tracking-widest text-white uppercase">
-                  Tempel
+                  {copy.paste}
                 </Text>
               </Pressable>
 
@@ -295,7 +303,7 @@ export default function ThreadsScreen() {
                 >
                   <IconSymbol name="info" size={18} color="#fff" />
                   <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                    Ambil Metadata
+                    {copy.fetchMetadata}
                   </Text>
                 </LinearGradient>
               </Pressable>
@@ -323,10 +331,10 @@ export default function ThreadsScreen() {
                 </View>
                 <Text className="text-[11px] font-medium text-social-slate-500">
                   {c.isFetching
-                    ? "Mengambil data..."
+                    ? copy.fetchingData
                     : c.videoInfo
-                      ? "Siap diunduh"
-                      : "Masukkan link lalu ambil metadata"}
+                      ? copy.readyToDownload
+                      : copy.insertLinkFirst}
                 </Text>
               </View>
               <Pressable
@@ -345,8 +353,7 @@ export default function ThreadsScreen() {
 
             <View className="mb-5">
               <Text className="text-[13px] leading-relaxed text-slate-200 mb-4">
-                {c.videoInfo?.text?.trim() ||
-                  "Preview akan muncul setelah metadata berhasil diambil."}
+                {c.videoInfo?.text?.trim() || copy.previewFallback}
               </Text>
 
               {activeSlide ? (
@@ -392,11 +399,11 @@ export default function ThreadsScreen() {
                   {!!c.videoInfo?.mediaItems?.length && (
                     <View className="flex-row items-center justify-between px-4 py-3 border-t border-white/10 bg-black/30">
                       <Text className="text-[10px] font-black uppercase tracking-widest text-white/80">
-                        Slide {c.slideIndex + 1} /{" "}
+                        {copy.slide} {c.slideIndex + 1} /{" "}
                         {c.videoInfo.mediaItems.length}
                       </Text>
                       <Text className="text-[10px] font-bold text-social-slate-500">
-                        Swipe kiri/kanan
+                        {copy.swipeHint}
                       </Text>
                     </View>
                   )}
@@ -404,7 +411,7 @@ export default function ThreadsScreen() {
               ) : (
                 <View className="h-[220px] rounded-2xl bg-white/[0.03] border border-white/10 items-center justify-center">
                   <Text className="text-xs font-bold text-social-slate-500">
-                    Belum ada preview
+                    {copy.noPreview}
                   </Text>
                 </View>
               )}
@@ -472,7 +479,7 @@ export default function ThreadsScreen() {
                 color={socialPalette.slate500}
               />
               <Text className="font-bold text-xs tracking-widest text-white uppercase">
-                Preview
+                {copy.preview}
               </Text>
             </Pressable>
           </View>
@@ -502,7 +509,7 @@ export default function ThreadsScreen() {
             >
               <IconSymbol name="download" size={20} color="#fff" />
               <Text className="text-xs font-black uppercase tracking-[0.2em] text-white">
-                Download Slide Aktif
+                {copy.downloadActiveSlide}
               </Text>
             </LinearGradient>
           </Pressable>
@@ -511,7 +518,7 @@ export default function ThreadsScreen() {
         <View className="px-5 mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-sm font-cabinet font-extrabold uppercase tracking-widest text-white">
-              Riwayat Terakhir
+              {copy.recentHistory}
             </Text>
             <Pressable
               onPress={() => c.openConfirmClearHistory()}
@@ -520,7 +527,7 @@ export default function ThreadsScreen() {
               style={{ opacity: c.history.length ? 1 : 0.5 }}
             >
               <Text className="text-[10px] font-bold text-social-accent uppercase tracking-widest">
-                Hapus Riwayat
+                {copy.clearHistory}
               </Text>
             </Pressable>
           </View>
@@ -556,7 +563,7 @@ export default function ThreadsScreen() {
             {!c.history.length && (
               <View className="rounded-2xl p-4 bg-white/[0.03] border border-white/10">
                 <Text className="text-xs font-bold text-social-slate-500">
-                  Belum ada riwayat.
+                  {copy.emptyHistory}
                 </Text>
               </View>
             )}

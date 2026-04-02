@@ -2,14 +2,19 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { Pressable, Text, View, type ViewStyle } from "react-native";
 
+import { useRouter } from "expo-router";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
+
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
 
 import { socialPalette } from "@/lib/pallate";
 
-export function DonasiHeader({
-  title = "DONASI | MEDIA TOOLS",
-  onPressSystem,
-}: SocialHeaderProps) {
+export function DonasiHeader({ title, onPressSystem }: SocialHeaderProps) {
+  const { language } = useLanguage();
+  const resolvedTitle = title ?? languageData.donasiHeader[language];
   const logoStyle: ViewStyle = {
     width: 32,
     height: 32,
@@ -21,6 +26,13 @@ export function DonasiHeader({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  };
+
+  const router = useRouter();
+
+  const handlePressSystem = () => {
+    router.push("/system");
+    onPressSystem?.();
   };
 
   return (
@@ -36,12 +48,12 @@ export function DonasiHeader({
         </LinearGradient>
 
         <Text className="text-xl font-extrabold tracking-tight text-white">
-          {title}
+          {resolvedTitle}
         </Text>
       </View>
 
       <Pressable
-        onPress={onPressSystem}
+        onPress={handlePressSystem}
         className="w-10 h-10 rounded-full border border-white/10 items-center justify-center bg-white/5 active:opacity-80"
       >
         <IconSymbol name="devices" size={22} color="rgba(255,255,255,0.7)" />

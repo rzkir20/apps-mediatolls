@@ -6,6 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { useSettingsPermissionsController } from "@/services/settings.service";
 
 import { PermissionCard } from "@/components/ui/helper";
@@ -16,6 +20,8 @@ const ACCENT = socialPalette.accent;
 
 export default function SettingsPermissionsScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.settingsPermissions[language];
   const {
     mediaLibrary,
     camera,
@@ -40,18 +46,18 @@ export default function SettingsPermissionsScreen() {
           <View className="flex-row items-center gap-3">
             <View className="h-[2px] w-8" style={{ backgroundColor: ACCENT }} />
             <Text className="text-social-accent font-black text-[10px] tracking-[0.2em] uppercase">
-              Privacy & Security
+              {copy.header}
             </Text>
           </View>
 
           <Text className="text-4xl font-cabinet font-extrabold leading-[44px] tracking-tight text-white">
-            App{"\n"}
-            <Text style={{ color: ACCENT }}>Permissions</Text>
+            {copy.title1}
+            {"\n"}
+            <Text style={{ color: ACCENT }}>{copy.title2}</Text>
           </Text>
 
           <Text className="text-slate-400 text-sm font-medium leading-relaxed">
-            Untuk memberikan pengalaman terbaik, Media Tools memerlukan akses ke
-            beberapa fitur perangkat Anda. Privasi Anda adalah prioritas kami.
+            {copy.description}
           </Text>
         </View>
 
@@ -65,8 +71,8 @@ export default function SettingsPermissionsScreen() {
           )}
 
           <PermissionCard
-            title="Storage Access"
-            description="Access your device storage to save downloaded content directly to your gallery."
+            title={copy.storageTitle}
+            description={copy.storageDesc}
             iconName="hard-drive"
             iconTint="#3b82f6"
             iconBg="rgba(59,130,246,0.10)"
@@ -78,8 +84,8 @@ export default function SettingsPermissionsScreen() {
           />
 
           <PermissionCard
-            title="Camera"
-            description="Used for video recording features and AR filters within the internal media player."
+            title={copy.cameraTitle}
+            description={copy.cameraDesc}
             iconName="camera"
             iconTint="#a855f7"
             iconBg="rgba(168,85,247,0.10)"
@@ -90,8 +96,8 @@ export default function SettingsPermissionsScreen() {
           />
 
           <PermissionCard
-            title="Microphone"
-            description="Required for audio recording, voice processing, and format conversion stabilization."
+            title={copy.microphoneTitle}
+            description={copy.microphoneDesc}
             iconName="mic"
             iconTint="#f97316"
             iconBg="rgba(249,115,22,0.10)"
@@ -102,8 +108,8 @@ export default function SettingsPermissionsScreen() {
           />
 
           <PermissionCard
-            title="Files Access"
-            description="Permission to access and manage your files for document conversion and batch renaming."
+            title={copy.filesTitle}
+            description={copy.filesDesc}
             iconName="folder.search"
             iconTint="#06b6d4"
             iconBg="rgba(6,182,212,0.10)"
@@ -128,7 +134,7 @@ export default function SettingsPermissionsScreen() {
             }}
           >
             <Text className="text-white font-black uppercase tracking-[0.2em] text-xs">
-              {allGranted ? "All Permissions Granted" : "Grant All Permissions"}
+              {allGranted ? copy.allGranted : copy.grantAll}
             </Text>
           </Pressable>
         </View>

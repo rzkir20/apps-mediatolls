@@ -20,6 +20,10 @@ import { DialogFacebook } from "@/components/social/facebook/DialogFacebook";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { useFacebookController } from "@/services/facebook.service";
 
 import { FORMAT_BADGES_FACEBOOK } from "@/components/ui/helper";
@@ -30,6 +34,8 @@ const FB_BLUE = "#1877F2";
 
 export default function FacebookScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.socialFacebook[language];
 
   const {
     url,
@@ -80,10 +86,10 @@ export default function FacebookScreen() {
     <View className="flex-1 bg-social-bg">
       <DeleteConfirmModal
         visible={isConfirmClearOpen}
-        title="Hapus semua riwayat?"
-        description="Semua riwayat download Facebook akan dihapus permanen dan tidak bisa dikembalikan."
-        cancelLabel="Batal"
-        confirmLabel="Hapus"
+        title={copy.deleteHistoryTitle}
+        description={copy.deleteHistoryDescription}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.delete}
         iconName="history.clear"
         iconColor="#f97373"
         onCancel={closeConfirmClearHistory}
@@ -101,7 +107,7 @@ export default function FacebookScreen() {
         speedText={downloadSpeedText ?? undefined}
         remainingText={downloadRemainingText ?? undefined}
         downloadedTotalText={
-          downloadTotalText ?? (isSaving ? "Saving..." : (saveText ?? ""))
+          downloadTotalText ?? (isSaving ? copy.saving : (saveText ?? ""))
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
@@ -130,8 +136,8 @@ export default function FacebookScreen() {
           metadata?.duration?.trim() || downloadRemainingText || "—"
         }
         formatText="MP4"
-        primaryActionLabel="Tutup"
-        secondaryActionLabel="Bagikan"
+        primaryActionLabel={copy.close}
+        secondaryActionLabel={copy.share}
         onPrimaryAction={closeDownloadSuccessModal}
         onSecondaryAction={onShareDownloaded}
         onBack={closeDownloadSuccessModal}
@@ -170,7 +176,7 @@ export default function FacebookScreen() {
               className="font-black text-[10px] tracking-[0.3em] uppercase"
               style={{ color: socialPalette.accent }}
             >
-              Facebook Platform
+              {copy.promoTitle}
             </Text>
           </View>
 
@@ -186,7 +192,7 @@ export default function FacebookScreen() {
                 <TextInput
                   value={url}
                   onChangeText={setUrl}
-                  placeholder="Paste Facebook video link..."
+                  placeholder={copy.pastePlaceholder}
                   placeholderTextColor={socialPalette.slate600}
                   className="w-full bg-black/40 border border-white/5 rounded-2xl py-5 px-6 text-sm font-medium text-white"
                   autoCapitalize="none"
@@ -236,7 +242,7 @@ export default function FacebookScreen() {
                     }}
                   >
                     <Text className="font-black text-[11px] tracking-[3px] text-white uppercase">
-                      {isFetching ? "Processing..." : "Download Now"}
+                      {isFetching ? copy.processing : copy.downloadNow}
                     </Text>
                   </LinearGradient>
                 </Pressable>
@@ -247,7 +253,7 @@ export default function FacebookScreen() {
           {/* Formats */}
           <View className="mt-8">
             <Text className="text-[10px] font-black text-social-slate-500 tracking-[0.3em] uppercase mb-4">
-              Available Formats
+              {copy.availableFormats}
             </Text>
             <View className="flex-row gap-3">
               {FORMAT_BADGES_FACEBOOK.map((b) => (
@@ -333,7 +339,7 @@ export default function FacebookScreen() {
                         color={socialPalette.slate500}
                       />
                       <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                        Preview
+                        {copy.preview}
                       </Text>
                     </Pressable>
 
@@ -348,7 +354,7 @@ export default function FacebookScreen() {
                     >
                       <IconSymbol name="arrow.down" size={18} color="#fff" />
                       <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                        {isSaving ? "Saving..." : "Save MP4"}
+                        {isSaving ? copy.saving : copy.saveMp4}
                       </Text>
                     </Pressable>
                   </View>
@@ -363,8 +369,7 @@ export default function FacebookScreen() {
           <View className="flex-row items-center justify-between mb-6">
             <View className="flex-row items-center gap-2 flex-1 mr-3">
               <Text className="text-2xl font-extrabold italic tracking-tight uppercase text-white shrink">
-                Recent{" "}
-                <Text style={{ color: socialPalette.accent }}>History</Text>
+                {copy.recentHistory}
               </Text>
             </View>
             <Pressable
@@ -383,7 +388,7 @@ export default function FacebookScreen() {
                 style={{ color: socialPalette.slate500 }}
                 numberOfLines={1}
               >
-                Clear History
+                {copy.clearHistory}
               </Text>
             </Pressable>
           </View>
@@ -426,8 +431,7 @@ export default function FacebookScreen() {
                 />
               </View>
               <Text className="text-slate-500 text-[11px] font-bold px-10 text-center leading-relaxed tracking-wide uppercase">
-                Start downloading your favorite Facebook content to see history
-                here.
+                {copy.emptyHistory}
               </Text>
             </View>
           )}
@@ -475,16 +479,15 @@ export default function FacebookScreen() {
                   className="text-[9px] font-black uppercase tracking-widest"
                   style={{ color: socialPalette.accent }}
                 >
-                  RECOMMENDED
+                  {copy.recommended}
                 </Text>
               </View>
 
               <Text className="text-2xl font-extrabold text-white mb-2">
-                Facebook Platform
+                {copy.promoTitle}
               </Text>
               <Text className="text-social-slate-500 text-xs mb-6 leading-relaxed max-w-[220px]">
-                Explore our platform for faster and easier downloading of
-                Facebook videos.
+                {copy.promoDesc}
               </Text>
 
               <Pressable
@@ -492,7 +495,7 @@ export default function FacebookScreen() {
                 className="self-start px-8 py-4 rounded-2xl bg-white active:opacity-90"
               >
                 <Text className="text-black font-black text-[10px] tracking-[0.2em] uppercase">
-                  Open Facebook
+                  {copy.openFacebook}
                 </Text>
               </Pressable>
             </View>

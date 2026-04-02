@@ -10,6 +10,10 @@ import { BottomSheets } from "@/components/BottomSheets";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { socialPalette } from "@/lib/pallate";
 
 const BG = socialPalette.bg;
@@ -20,6 +24,8 @@ export default function SettingsPrivacyScreen() {
   const insets = useSafeAreaInsets();
   const [openFaq, setOpenFaq] = useState(0);
   const [exportSheetVisible, setExportSheetVisible] = useState(false);
+  const { language } = useLanguage();
+  const copy = languageData.settingsPrivacy[language];
 
   const faqItems = [
     {
@@ -56,10 +62,10 @@ export default function SettingsPrivacyScreen() {
               <IconSymbol name="lock" size={36} color="#fff" />
             </LinearGradient>
             <Text className="text-3xl font-cabinet font-black tracking-tight text-white text-center">
-              Security & <Text style={{ color: ACCENT }}>Privacy</Text>
+              {copy.title1} <Text style={{ color: ACCENT }}>{copy.title2}</Text>
             </Text>
             <Text className="text-slate-400 text-sm font-medium mt-2 text-center">
-              Data Anda adalah prioritas utama kami.
+              {copy.subtitle}
             </Text>
           </View>
 
@@ -67,10 +73,10 @@ export default function SettingsPrivacyScreen() {
             <View className="w-2 h-2 rounded-full bg-emerald-500" />
             <View className="flex-1">
               <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-500">
-                Sistem Aman
+                {copy.safeSystem}
               </Text>
               <Text className="text-[10px] text-slate-500 font-medium">
-                Semua protokol enkripsi aktif dan berjalan normal.
+                {copy.safeSystemDesc}
               </Text>
             </View>
             <IconSymbol name="checkmark" size={18} color="#10b981" />
@@ -78,7 +84,7 @@ export default function SettingsPrivacyScreen() {
 
           <View>
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Gambaran Privasi
+              {copy.privacyOverview}
             </Text>
             <View className="rounded-[28px] p-5 border border-white/10 bg-white/[0.03] gap-5">
               <View className="flex-row gap-4">
@@ -87,11 +93,10 @@ export default function SettingsPrivacyScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-bold text-white mb-1">
-                    Tanpa Pelacakan
+                    {copy.noTracking}
                   </Text>
                   <Text className="text-[12px] leading-relaxed text-slate-400">
-                    Kami tidak melacak aktivitas browsing Anda di luar aplikasi
-                    Media Tools.
+                    {copy.noTrackingDesc}
                   </Text>
                 </View>
               </View>
@@ -102,11 +107,10 @@ export default function SettingsPrivacyScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-sm font-bold text-white mb-1">
-                    Penyimpanan Lokal
+                    {copy.localStorage}
                   </Text>
                   <Text className="text-[12px] leading-relaxed text-slate-400">
-                    Riwayat unduhan disimpan secara lokal di perangkat Anda,
-                    bukan di server kami.
+                    {copy.localStorageDesc}
                   </Text>
                 </View>
               </View>
@@ -115,7 +119,7 @@ export default function SettingsPrivacyScreen() {
 
           <View>
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Protokol Keamanan
+              {copy.securityProtocol}
             </Text>
             <View className="flex-row gap-3">
               <View className="flex-1 rounded-3xl p-5 border border-white/10 bg-white/[0.03]">
@@ -141,7 +145,7 @@ export default function SettingsPrivacyScreen() {
 
           <View>
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Hak Data Anda
+              {copy.yourDataRights}
             </Text>
 
             <Pressable
@@ -151,7 +155,7 @@ export default function SettingsPrivacyScreen() {
               <View className="flex-row items-center gap-3">
                 <IconSymbol name="download" size={18} color="#94a3b8" />
                 <Text className="text-sm font-bold text-white">
-                  Ekspor Data Saya
+                  {copy.exportMyData}
                 </Text>
               </View>
               <IconSymbol name="chevron.right" size={18} color="#94a3b8" />
@@ -160,7 +164,7 @@ export default function SettingsPrivacyScreen() {
 
           <View>
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-3 ml-1">
-              Tanya Jawab Keamanan
+              {copy.securityFaq}
             </Text>
             <View className="gap-3">
               {faqItems.map((item, index) => {
@@ -209,14 +213,14 @@ export default function SettingsPrivacyScreen() {
               className="h-14 w-full rounded-2xl items-center justify-center"
             >
               <Text className="text-white text-[11px] font-black uppercase tracking-[0.2em]">
-                Hubungi Tim Keamanan
+                {copy.contactSecurityTeam}
               </Text>
             </LinearGradient>
           </Pressable>
 
           <View className="items-center pb-2">
             <Text className="text-[10px] text-slate-600 font-medium uppercase tracking-[0.2em] text-center">
-              Terverifikasi oleh MediaTools Trust Engine
+              {copy.verifiedBy}
             </Text>
           </View>
         </View>
@@ -225,15 +229,14 @@ export default function SettingsPrivacyScreen() {
       <BottomSheets
         visible={exportSheetVisible}
         onClose={() => setExportSheetVisible(false)}
-        title="Ekspor Data"
+        title={copy.exportData}
       >
         <View className="pb-6">
           <Text className="text-sm font-semibold text-white">
-            data anda masuk ke dalam penyimpanan data device
+            {copy.exportInfoTitle}
           </Text>
           <Text className="text-[11px] leading-relaxed text-slate-400 mt-2">
-            Jika kamu menghapus aplikasi atau membersihkan data aplikasi, data
-            ini bisa ikut terhapus.
+            {copy.exportInfoBody}
           </Text>
 
           <Pressable
@@ -241,7 +244,7 @@ export default function SettingsPrivacyScreen() {
             className="mt-5 h-12 rounded-2xl items-center justify-center border border-white/10 bg-white/[0.04]"
           >
             <Text className="text-[11px] font-black uppercase tracking-[0.2em] text-white">
-              Tutup
+              {copy.close}
             </Text>
           </Pressable>
         </View>

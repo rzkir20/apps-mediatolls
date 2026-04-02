@@ -10,6 +10,10 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { BottomSheets } from "@/components/BottomSheets";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { socialPalette } from "@/lib/pallate";
 
 const BG = socialPalette.bg;
@@ -17,55 +21,43 @@ const BG = socialPalette.bg;
 const ACCENT = socialPalette.accent;
 
 const LANGUAGE_OPTIONS = [
-  { key: "id", label: "Bahasa Indonesia" },
-  { key: "en", label: "English" },
+  { key: "id", label: languageData.labels.id },
+  { key: "en", label: languageData.labels.en },
 ] as const;
 
 const SETTINGS_CARDS = [
   {
     key: "permissions",
-    title: "Permissions",
-    description: "Kelola akses kamera, mikrofon, dan penyimpanan aplikasi.",
     icon: "settings" as const,
     route: "/(tabs)/settings/permissions" as const,
   },
   {
     key: "language",
-    title: "Language",
-    description: "Pilih bahasa tampilan aplikasi sesuai preferensi Anda.",
     icon: "book" as const,
     route: "/(tabs)/settings/language" as const,
   },
   {
     key: "about",
-    title: "About",
-    description: "Informasi aplikasi, versi, dan detail pengembang.",
     icon: "info" as const,
     route: "/(tabs)/settings/about" as const,
   },
   {
     key: "privacy",
-    title: "Privacy",
-    description: "Pelajari kebijakan privasi dan penggunaan data Anda.",
     icon: "lock" as const,
     route: "/(tabs)/settings/privacy" as const,
   },
   {
     key: "faqs",
-    title: "FAQs",
-    description:
-      "Temukan jawaban cepat untuk pertanyaan yang sering ditanyakan.",
     icon: "search" as const,
     route: "/(tabs)/settings/faqs" as const,
   },
-];
+] as const;
 
 export default function SettingsPermissionsScreen() {
   const insets = useSafeAreaInsets();
   const [isLanguageSheetOpen, setIsLanguageSheetOpen] = React.useState(false);
-  const [selectedLanguage, setSelectedLanguage] = React.useState<"id" | "en">(
-    "id",
-  );
+  const { language, setLanguage } = useLanguage();
+  const copy = languageData.settings[language];
 
   return (
     <View className="flex-1" style={{ backgroundColor: BG }}>
@@ -78,18 +70,18 @@ export default function SettingsPermissionsScreen() {
           <View className="flex-row items-center gap-3">
             <View className="h-[2px] w-8" style={{ backgroundColor: ACCENT }} />
             <Text className="text-social-accent font-black text-[10px] tracking-[0.2em] uppercase">
-              App Preferences
+              {copy.appPreferences}
             </Text>
           </View>
 
           <Text className="text-4xl font-cabinet font-extrabold leading-[44px] tracking-tight text-white">
-            Settings{"\n"}
-            <Text style={{ color: ACCENT }}>Center</Text>
+            {copy.settings}
+            {"\n"}
+            <Text style={{ color: ACCENT }}>{copy.center}</Text>
           </Text>
 
           <Text className="text-slate-400 text-sm font-medium leading-relaxed">
-            Atur pengalaman aplikasi Anda dari satu tempat, mulai dari izin
-            perangkat, bahasa, informasi aplikasi, hingga kebijakan privasi.
+            {copy.description}
           </Text>
         </View>
 
@@ -113,16 +105,16 @@ export default function SettingsPermissionsScreen() {
                   </View>
                   <View className="flex-1 pr-4">
                     <Text className="text-white text-base font-bold">
-                      {item.title}
+                      {copy.cards[item.key].title}
                     </Text>
                     <Text className="text-slate-400 text-xs leading-relaxed mt-1">
                       {item.key === "language"
-                        ? `Bahasa saat ini: ${
-                            selectedLanguage === "id"
-                              ? "Bahasa Indonesia"
-                              : "English"
+                        ? `${copy.currentLanguage}: ${
+                            language === "id"
+                              ? languageData.labels.id
+                              : languageData.labels.en
                           }`
-                        : item.description}
+                        : copy.cards[item.key].description}
                     </Text>
                   </View>
                 </View>
@@ -136,16 +128,16 @@ export default function SettingsPermissionsScreen() {
       <BottomSheets
         visible={isLanguageSheetOpen}
         onClose={() => setIsLanguageSheetOpen(false)}
-        title="Pilih Bahasa"
+        title={copy.selectLanguage}
       >
         <View className="pb-6 gap-2">
-          {LANGUAGE_OPTIONS.map((language) => {
-            const active = selectedLanguage === language.key;
+          {LANGUAGE_OPTIONS.map((option) => {
+            const active = language === option.key;
             return (
               <Pressable
-                key={language.key}
-                onPress={() => {
-                  setSelectedLanguage(language.key);
+                key={option.key}
+                onPress={async () => {
+                  await setLanguage(option.key);
                   setIsLanguageSheetOpen(false);
                 }}
                 className={`rounded-2xl px-4 py-4 border ${
@@ -160,7 +152,7 @@ export default function SettingsPermissionsScreen() {
                       active ? "text-social-accent" : "text-white"
                     }`}
                   >
-                    {language.label}
+                    {option.label}
                   </Text>
                   {active ? (
                     <IconSymbol name="checkmark" size={18} color={ACCENT} />

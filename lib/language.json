@@ -1,0 +1,750 @@
+{
+  "default": "id",
+  "supported": ["id", "en"],
+  "labels": {
+    "id": "Bahasa Indonesia",
+    "en": "English"
+  },
+  "settings": {
+    "id": {
+      "appPreferences": "App Preferences",
+      "settings": "Pengaturan",
+      "center": "Pusat",
+      "description": "Atur pengalaman aplikasi Anda dari satu tempat, mulai dari izin perangkat, bahasa, informasi aplikasi, hingga kebijakan privasi.",
+      "currentLanguage": "Bahasa saat ini",
+      "selectLanguage": "Pilih Bahasa",
+      "cards": {
+        "permissions": {
+          "title": "Izin",
+          "description": "Kelola akses kamera, mikrofon, dan penyimpanan aplikasi."
+        },
+        "language": {
+          "title": "Bahasa",
+          "description": "Pilih bahasa tampilan aplikasi sesuai preferensi Anda."
+        },
+        "about": {
+          "title": "Tentang",
+          "description": "Informasi aplikasi, versi, dan detail pengembang."
+        },
+        "privacy": {
+          "title": "Privasi",
+          "description": "Pelajari kebijakan privasi dan penggunaan data Anda."
+        },
+        "faqs": {
+          "title": "FAQ",
+          "description": "Temukan jawaban cepat untuk pertanyaan yang sering ditanyakan."
+        }
+      }
+    },
+    "en": {
+      "appPreferences": "App Preferences",
+      "settings": "Settings",
+      "center": "Center",
+      "description": "Manage your app experience in one place, from device permissions and language to app info and privacy policy.",
+      "currentLanguage": "Current language",
+      "selectLanguage": "Choose Language",
+      "cards": {
+        "permissions": {
+          "title": "Permissions",
+          "description": "Manage camera, microphone, and app storage access."
+        },
+        "language": {
+          "title": "Language",
+          "description": "Choose the app display language based on your preference."
+        },
+        "about": {
+          "title": "About",
+          "description": "App information, version, and developer details."
+        },
+        "privacy": {
+          "title": "Privacy",
+          "description": "Learn about your privacy policy and data usage."
+        },
+        "faqs": {
+          "title": "FAQs",
+          "description": "Find quick answers to frequently asked questions."
+        }
+      }
+    }
+  },
+  "faqs": {
+    "id": {
+      "title": "Pusat",
+      "titleAccent": "Bantuan",
+      "subtitle": "Jawaban cepat untuk pertanyaan paling sering diajukan.",
+      "activeHelpTitle": "Pusat Bantuan Aktif",
+      "activeHelpDescription": "Cek panduan cepat sebelum menghubungi tim dukungan.",
+      "popularQuestions": "Pertanyaan Populer",
+      "helpCategories": "Kategori Bantuan",
+      "categories": ["Unduhan", "Akun", "Format File", "Troubleshooting", "Privasi", "Performa"],
+      "needMoreHelp": "Masih butuh bantuan?",
+      "needMoreHelpDescription": "Jika jawaban yang Anda cari belum tersedia, hubungi tim kami untuk mendapatkan bantuan langsung.",
+      "contactSupport": "Hubungi Support",
+      "items": [
+        {
+          "question": "Platform apa saja yang didukung Media Tools?",
+          "answer": "Saat ini Media Tools mendukung TikTok, Instagram, Facebook, YouTube, dan Threads untuk unduhan konten publik."
+        },
+        {
+          "question": "Kenapa proses unduhan terkadang gagal?",
+          "answer": "Biasanya karena link tidak valid, konten privat, atau server sumber sedang membatasi akses sementara."
+        },
+        {
+          "question": "Di mana file hasil unduhan disimpan?",
+          "answer": "File otomatis disimpan ke folder Media Tools di perangkat Anda. Lokasinya menyesuaikan platform dan izin yang diberikan."
+        },
+        {
+          "question": "Apakah saya bisa memilih format MP3/MP4?",
+          "answer": "Ya, untuk platform yang mendukung, Anda bisa memilih format MP4 video atau MP3 audio sebelum mengunduh."
+        },
+        {
+          "question": "Apakah aplikasi ini gratis digunakan?",
+          "answer": "Ya, fitur utama Media Tools dapat digunakan secara gratis untuk kebutuhan personal."
+        }
+      ]
+    },
+    "en": {
+      "title": "Help",
+      "titleAccent": "Center",
+      "subtitle": "Quick answers for the most frequently asked questions.",
+      "activeHelpTitle": "Active Help Center",
+      "activeHelpDescription": "Check the quick guide before contacting support.",
+      "popularQuestions": "Popular Questions",
+      "helpCategories": "Help Categories",
+      "categories": ["Downloads", "Account", "File Format", "Troubleshooting", "Privacy", "Performance"],
+      "needMoreHelp": "Still need help?",
+      "needMoreHelpDescription": "If the answer you need is not available yet, contact our team for direct assistance.",
+      "contactSupport": "Contact Support",
+      "items": [
+        {
+          "question": "Which platforms are supported by Media Tools?",
+          "answer": "Currently, Media Tools supports TikTok, Instagram, Facebook, YouTube, and Threads for public content downloads."
+        },
+        {
+          "question": "Why does the download process sometimes fail?",
+          "answer": "Usually due to invalid links, private content, or temporary access restrictions from the source server."
+        },
+        {
+          "question": "Where are downloaded files stored?",
+          "answer": "Files are automatically saved to the Media Tools folder on your device. The exact location depends on platform and granted permissions."
+        },
+        {
+          "question": "Can I choose MP3/MP4 format?",
+          "answer": "Yes, for supported platforms, you can choose MP4 video or MP3 audio format before downloading."
+        },
+        {
+          "question": "Is this app free to use?",
+          "answer": "Yes, Media Tools core features are free to use for personal needs."
+        }
+      ]
+    }
+  },
+  "testimonials": {
+    "id": {
+      "backToSocial": "Kembali ke Sosial",
+      "communityImpressions": "Kesan Komunitas",
+      "totalTestimonials": "Total Testimoni"
+    },
+    "en": {
+      "backToSocial": "Back to Social",
+      "communityImpressions": "Community Voices",
+      "totalTestimonials": "Total Testimonials"
+    }
+  },
+  "notFound": {
+    "id": {
+      "stackTitle": "Oops!",
+      "title": "Ups! Halaman tidak ditemukan.",
+      "subtitle": "Halaman yang Anda cari sepertinya tidak tersedia.",
+      "backToHome": "Kembali ke beranda",
+      "needHelp": "Butuh bantuan?",
+      "contactUs": "Hubungi Kami",
+      "whatsappText": "Halo, saya membutuhkan bantuan"
+    },
+    "en": {
+      "stackTitle": "Oops!",
+      "title": "Oops! We can't find that page.",
+      "subtitle": "The page you're looking for doesn't seem to exist.",
+      "backToHome": "Back to home",
+      "needHelp": "Need help?",
+      "contactUs": "Contact Us",
+      "whatsappText": "Hi, I need assistance"
+    }
+  },
+  "donasiHeader": {
+    "id": "DONASI | MEDIA TOOLS",
+    "en": "DONATION | MEDIA TOOLS"
+  },
+  "socialLayout": {
+    "id": { "previous": "Sebelumnya", "next": "Berikutnya" },
+    "en": { "previous": "Previous", "next": "Next" }
+  },
+  "system": {
+    "id": {
+      "backToSocial": "Kembali ke Sosial",
+      "files": "Berkas",
+      "manager": "Manajer",
+      "searchPlaceholder": "Cari unduhan...",
+      "storageStatus": "Status Penyimpanan",
+      "loading": "Memuat...",
+      "storageUsedSuffix": "dari total penyimpanan digunakan",
+      "storageReadFail": "Tidak bisa membaca penyimpanan perangkat",
+      "retry": "Coba lagi",
+      "categories": "Kategori",
+      "latest": "Terbaru",
+      "oldest": "Terlama",
+      "size": "Ukuran",
+      "loadingFolders": "Memuat folder perangkat...",
+      "noFolders": "Tidak ada folder unduhan yang terdeteksi. Pastikan izin Storage sudah diaktifkan dan kamu sudah pernah download konten."
+    },
+    "en": {
+      "backToSocial": "Back to Social",
+      "files": "Files",
+      "manager": "Manager",
+      "searchPlaceholder": "Search downloads...",
+      "storageStatus": "Storage Status",
+      "loading": "Loading...",
+      "storageUsedSuffix": "of total storage used",
+      "storageReadFail": "Cannot read device storage",
+      "retry": "Retry",
+      "categories": "Categories",
+      "latest": "Latest",
+      "oldest": "Oldest",
+      "size": "Size",
+      "loadingFolders": "Loading device folders...",
+      "noFolders": "No download folders detected. Ensure Storage permission is enabled and you have downloaded content before."
+    }
+  },
+  "donasi": {
+    "id": {
+      "supportCreativity": "Dukung Kreativitas",
+      "keepFree": "Jaga Media Tools",
+      "forever": "Gratis Selamanya",
+      "subtitle": "Bantu kami menjaga layanan tetap cepat, gratis, dan tanpa iklan untuk komunitas kreatif Indonesia.",
+      "payment": "Pembayaran",
+      "scanText": "Scan kode di atas menggunakan aplikasi Bank atau E-Wallet favorit Anda.",
+      "transferGuide": "Panduan Transfer",
+      "bankWallet": "Bank & E-Wallet",
+      "transferDesc": "Langkah scan QRIS dari M-Banking atau dompet digital.",
+      "fundTitle1": "Ke Mana Dana",
+      "fundTitle2": "Anda Pergi?",
+      "hero1": "Pahlawan",
+      "hero2": "Media Tools",
+      "heroDesc": "Lihat cerita pengguna yang sudah merasakan manfaat Media Tools untuk kebutuhan kreatif harian mereka.",
+      "seeTestimonials": "Lihat Testimonial",
+      "fundUsage": [
+        { "title": "Biaya Server", "desc": "Menjaga kestabilan server download 24/7." },
+        { "title": "Pengembangan", "desc": "Fitur baru & perbaikan bug setiap minggu." },
+        { "title": "Pemeliharaan API", "desc": "Update rutin untuk semua media sosial." }
+      ]
+    },
+    "en": {
+      "supportCreativity": "Support Creativity",
+      "keepFree": "Keep Media Tools",
+      "forever": "Free Forever",
+      "subtitle": "Help us keep the service fast, free, and ad-free for the creative community.",
+      "payment": "Payment",
+      "scanText": "Scan the code above using your preferred Bank or E-Wallet app.",
+      "transferGuide": "Transfer Guide",
+      "bankWallet": "Bank & E-Wallet",
+      "transferDesc": "QRIS scan steps from mobile banking or digital wallets.",
+      "fundTitle1": "Where Your",
+      "fundTitle2": "Support Goes",
+      "hero1": "Media Tools",
+      "hero2": "Heroes",
+      "heroDesc": "See stories from users who have benefited from Media Tools for daily creative needs.",
+      "seeTestimonials": "See Testimonials",
+      "fundUsage": [
+        { "title": "Server Cost", "desc": "Keeping the download server stable 24/7." },
+        { "title": "Development", "desc": "New features and bug fixes every week." },
+        { "title": "API Maintenance", "desc": "Routine updates for all social media." }
+      ]
+    }
+  },
+  "settingsAbout": {
+    "id": {
+      "application": "Application",
+      "tagline": "All-in-One Social Media Downloader",
+      "aboutTitle": "Tentang Aplikasi",
+      "aboutDescription": "Media Tools adalah solusi lengkap untuk mengunduh konten media dari berbagai platform sosial media populer. Kami menyediakan akses cepat, aman, dan tanpa biaya untuk menyimpan video, foto, dan musik favorit Anda dalam kualitas terbaik.",
+      "downloads": "Unduhan",
+      "active": "Aktif",
+      "platform": "Platform",
+      "features": "Fitur Unggulan",
+      "developedBy": "Dikembangkan oleh",
+      "credits": "Pengakuan & Kredit",
+      "contactSupport": "Hubungi Dukungan",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "licenses": "Licenses",
+      "copyright": "2026 Media Tools. Seluruh Hak Cipta Dilindungi."
+    },
+    "en": {
+      "application": "Application",
+      "tagline": "All-in-One Social Media Downloader",
+      "aboutTitle": "About Application",
+      "aboutDescription": "Media Tools is a complete solution for downloading media content from popular social platforms. We provide fast, secure, and free access to save your favorite videos, photos, and music in the best available quality.",
+      "downloads": "Downloads",
+      "active": "Active",
+      "platform": "Platform",
+      "features": "Featured Features",
+      "developedBy": "Developed by",
+      "credits": "Credits",
+      "contactSupport": "Contact Support",
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "licenses": "Licenses",
+      "copyright": "2026 Media Tools. All Rights Reserved."
+    }
+  },
+  "settingsPrivacy": {
+    "id": {
+      "title1": "Security &",
+      "title2": "Privacy",
+      "subtitle": "Data Anda adalah prioritas utama kami.",
+      "safeSystem": "Sistem Aman",
+      "safeSystemDesc": "Semua protokol enkripsi aktif dan berjalan normal.",
+      "privacyOverview": "Gambaran Privasi",
+      "noTracking": "Tanpa Pelacakan",
+      "noTrackingDesc": "Kami tidak melacak aktivitas browsing Anda di luar aplikasi Media Tools.",
+      "localStorage": "Penyimpanan Lokal",
+      "localStorageDesc": "Riwayat unduhan disimpan secara lokal di perangkat Anda, bukan di server kami.",
+      "securityProtocol": "Protokol Keamanan",
+      "yourDataRights": "Hak Data Anda",
+      "exportMyData": "Ekspor Data Saya",
+      "securityFaq": "Tanya Jawab Keamanan",
+      "contactSecurityTeam": "Hubungi Tim Keamanan",
+      "verifiedBy": "Terverifikasi oleh MediaTools Trust Engine",
+      "exportData": "Ekspor Data",
+      "exportInfoTitle": "Data Anda tersimpan di penyimpanan perangkat",
+      "exportInfoBody": "Jika Anda menghapus aplikasi atau membersihkan data aplikasi, data ini bisa ikut terhapus.",
+      "close": "Tutup"
+    },
+    "en": {
+      "title1": "Security &",
+      "title2": "Privacy",
+      "subtitle": "Your data is our top priority.",
+      "safeSystem": "System Secure",
+      "safeSystemDesc": "All encryption protocols are active and running normally.",
+      "privacyOverview": "Privacy Overview",
+      "noTracking": "No Tracking",
+      "noTrackingDesc": "We do not track your browsing activity outside the Media Tools app.",
+      "localStorage": "Local Storage",
+      "localStorageDesc": "Download history is stored locally on your device, not on our servers.",
+      "securityProtocol": "Security Protocols",
+      "yourDataRights": "Your Data Rights",
+      "exportMyData": "Export My Data",
+      "securityFaq": "Security FAQ",
+      "contactSecurityTeam": "Contact Security Team",
+      "verifiedBy": "Verified by MediaTools Trust Engine",
+      "exportData": "Export Data",
+      "exportInfoTitle": "Your data is stored in device storage",
+      "exportInfoBody": "If you uninstall the app or clear app data, this data may be removed.",
+      "close": "Close"
+    }
+  },
+  "settingsPermissions": {
+    "id": {
+      "header": "Privacy & Security",
+      "title1": "App",
+      "title2": "Permissions",
+      "description": "Untuk memberikan pengalaman terbaik, Media Tools memerlukan akses ke beberapa fitur perangkat Anda. Privasi Anda adalah prioritas kami.",
+      "storageTitle": "Akses Penyimpanan",
+      "storageDesc": "Akses penyimpanan perangkat untuk menyimpan hasil unduhan langsung ke galeri Anda.",
+      "cameraTitle": "Kamera",
+      "cameraDesc": "Digunakan untuk fitur perekaman video dan filter AR di pemutar media internal.",
+      "microphoneTitle": "Mikrofon",
+      "microphoneDesc": "Diperlukan untuk perekaman audio, pemrosesan suara, dan stabilisasi konversi format.",
+      "filesTitle": "Akses Berkas",
+      "filesDesc": "Izin untuk mengakses dan mengelola berkas Anda untuk konversi dokumen dan penggantian nama massal.",
+      "allGranted": "Semua Izin Diberikan",
+      "grantAll": "Berikan Semua Izin"
+    },
+    "en": {
+      "header": "Privacy & Security",
+      "title1": "App",
+      "title2": "Permissions",
+      "description": "To provide the best experience, Media Tools requires access to several device features. Your privacy is our priority.",
+      "storageTitle": "Storage Access",
+      "storageDesc": "Access your device storage to save downloaded content directly to your gallery.",
+      "cameraTitle": "Camera",
+      "cameraDesc": "Used for video recording features and AR filters within the internal media player.",
+      "microphoneTitle": "Microphone",
+      "microphoneDesc": "Required for audio recording, voice processing, and format conversion stabilization.",
+      "filesTitle": "Files Access",
+      "filesDesc": "Permission to access and manage your files for document conversion and batch renaming.",
+      "allGranted": "All Permissions Granted",
+      "grantAll": "Grant All Permissions"
+    }
+  },
+  "permissionSetup": {
+    "id": {
+      "setupRequired": "Setup Required",
+      "grant": "Berikan",
+      "permissions": "Izin",
+      "description": "Kami memerlukan izin Anda agar fitur aplikasi dapat berjalan dengan optimal.",
+      "errorGeneric": "Terjadi kesalahan",
+      "permissionGranted": "Izin Diberikan",
+      "requesting": "Meminta...",
+      "continue": "Lanjut",
+      "skipForNow": "Lewati untuk sekarang"
+    },
+    "en": {
+      "setupRequired": "Setup Required",
+      "grant": "Grant",
+      "permissions": "Permissions",
+      "description": "We need your permission so app features can run optimally.",
+      "errorGeneric": "Something went wrong",
+      "permissionGranted": "Permission Granted",
+      "requesting": "Requesting...",
+      "continue": "Continue",
+      "skipForNow": "Skip for now"
+    }
+  },
+  "welcome": {
+    "id": { "next": "Selanjutnya", "getStarted": "Mulai", "skipForNow": "Lewati untuk sekarang" },
+    "en": { "next": "Next", "getStarted": "Get Started", "skipForNow": "Skip for now" }
+  },
+  "files": {
+    "id": {
+      "convertingDoc": "Konversi dokumen",
+      "convertingText": "Sedang mengonversi dokumen...",
+      "pauseConverting": "SEDANG KONVERSI",
+      "close": "TUTUP",
+      "formatFactory": "Format Factory",
+      "document": "Dokumen",
+      "converter": "Konverter",
+      "unknownSize": "Ukuran tidak diketahui",
+      "tapToChangeFile": "Ketuk untuk ganti file",
+      "readyToConvert": "Siap untuk konversi?",
+      "pickFromDevice": "Ketuk untuk memilih dokumen dari perangkat Anda",
+      "replaceFile": "Ganti file",
+      "chooseFile": "Pilih Berkas",
+      "supportedFormats": "Format Didukung",
+      "convertTo": "Konversi ke",
+      "outputQuality": "Kualitas Output",
+      "converting": "Mengonversi...",
+      "chooseFileFirst": "Pilih file dulu",
+      "choosePdfFirst": "Pilih PDF dulu",
+      "convertNow": "Konversi sekarang",
+      "recentConversions": "Konversi Terbaru",
+      "clearAll": "Hapus Semua",
+      "cannotOpenFile": "Tidak bisa membuka file"
+    },
+    "en": {
+      "convertingDoc": "Document conversion",
+      "convertingText": "Converting document...",
+      "pauseConverting": "CONVERTING",
+      "close": "CLOSE",
+      "formatFactory": "Format Factory",
+      "document": "Document",
+      "converter": "Converter",
+      "unknownSize": "Unknown size",
+      "tapToChangeFile": "Tap to change file",
+      "readyToConvert": "Ready to convert?",
+      "pickFromDevice": "Tap to pick a document from your device",
+      "replaceFile": "Replace file",
+      "chooseFile": "Choose File",
+      "supportedFormats": "Supported Formats",
+      "convertTo": "Convert to",
+      "outputQuality": "Output Quality",
+      "converting": "Converting...",
+      "chooseFileFirst": "Choose file first",
+      "choosePdfFirst": "Choose PDF first",
+      "convertNow": "Convert now",
+      "recentConversions": "Recent Conversions",
+      "clearAll": "Clear All",
+      "cannotOpenFile": "Cannot open file"
+    }
+  },
+  "socialTiktok": {
+    "id": {
+      "platform": "Platform TikTok",
+      "title1": "Download TikTok",
+      "title2": "Video/Foto",
+      "inputPlaceholder": "Masukkan link video TikTok di sini...",
+      "paste": "TEMPEL",
+      "processing": "Memproses...",
+      "getVideo": "Ambil Video",
+      "formats": "Format:",
+      "preview": "Preview",
+      "saving": "Menyimpan...",
+      "saveMp4": "Simpan MP4",
+      "savePhotos": "Simpan Foto",
+      "saveMp3": "Simpan MP3",
+      "recentHistory": "Riwayat Terbaru",
+      "clearHistory": "Hapus Riwayat",
+      "emptyHistory": "Belum ada riwayat. Isi link TikTok lalu download.",
+      "deleteHistoryTitle": "Hapus semua riwayat?",
+      "deleteHistoryDescription": "Semua riwayat download TikTok akan dihapus permanen dan tidak bisa dikembalikan.",
+      "cancel": "Batal",
+      "delete": "Hapus",
+      "close": "TUTUP",
+      "share": "Bagikan",
+      "download": "DOWNLOAD",
+      "resumeDownload": "LANJUTKAN DOWNLOAD",
+      "pauseDownload": "JEDA DOWNLOAD",
+      "savingVideo": "Menyimpan video...",
+      "promoTitle": "VideoMAX Pro",
+      "promoDesc": "Jelajahi downloader premium kami untuk download multi-thread yang lebih cepat.",
+      "promoBtn": "Jelajahi Sekarang",
+      "tiktokVideoFallback": "Video TikTok"
+    },
+    "en": {
+      "platform": "TikTok Platform",
+      "title1": "Download TikTok",
+      "title2": "Video/Photo",
+      "inputPlaceholder": "Insert TikTok Video Link Here...",
+      "paste": "PASTE",
+      "processing": "Processing...",
+      "getVideo": "Get Video",
+      "formats": "Formats:",
+      "preview": "Preview",
+      "saving": "Saving...",
+      "saveMp4": "Save MP4",
+      "savePhotos": "Save Photos",
+      "saveMp3": "Save MP3",
+      "recentHistory": "Recent History",
+      "clearHistory": "Clear History",
+      "emptyHistory": "No history yet. Paste a TikTok link and download.",
+      "deleteHistoryTitle": "Delete all history?",
+      "deleteHistoryDescription": "All TikTok download history will be permanently deleted and cannot be restored.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "close": "CLOSE",
+      "share": "Share",
+      "download": "DOWNLOAD",
+      "resumeDownload": "RESUME DOWNLOAD",
+      "pauseDownload": "PAUSE DOWNLOAD",
+      "savingVideo": "Saving video...",
+      "promoTitle": "VideoMAX Pro",
+      "promoDesc": "Explore our premium downloader for faster multi-thread downloading.",
+      "promoBtn": "Explore Now",
+      "tiktokVideoFallback": "TikTok Video"
+    }
+  },
+  "socialInstagram": {
+    "id": {
+      "deleteHistoryTitle": "Hapus semua riwayat?",
+      "deleteHistoryDescription": "Semua riwayat download Instagram akan dihapus permanen dan tidak bisa dikembalikan.",
+      "cancel": "Batal",
+      "delete": "Hapus",
+      "close": "CLOSE",
+      "share": "Bagikan",
+      "processing": "Memproses...",
+      "download": "DOWNLOAD",
+      "resumeDownload": "LANJUTKAN DOWNLOAD",
+      "pauseDownload": "JEDA DOWNLOAD",
+      "platform": "Platform Instagram",
+      "title1": "Download Instagram",
+      "title2": "Foto/Video",
+      "inputPlaceholder": "Masukkan link Instagram di sini...",
+      "paste": "TEMPEL",
+      "downloadBtn": "Download",
+      "formats": "Format:",
+      "preview": "Preview",
+      "saving": "Menyimpan...",
+      "saveMp4": "Simpan MP4",
+      "savePhotos": "Simpan Foto",
+      "recentHistory": "Riwayat Terbaru",
+      "clearHistory": "Hapus Riwayat",
+      "emptyHistory": "Belum ada riwayat. Isi link Instagram lalu download.",
+      "promoTitle": "Platform Instagram",
+      "promoDesc": "Jelajahi platform kami untuk unduhan foto dan video Instagram yang lebih cepat dan mudah.",
+      "promoBtn": "Buka Instagram"
+    },
+    "en": {
+      "deleteHistoryTitle": "Delete all history?",
+      "deleteHistoryDescription": "All Instagram download history will be permanently deleted and cannot be restored.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "close": "CLOSE",
+      "share": "Share",
+      "processing": "Processing...",
+      "download": "DOWNLOAD",
+      "resumeDownload": "RESUME DOWNLOAD",
+      "pauseDownload": "PAUSE DOWNLOAD",
+      "platform": "Instagram Platform",
+      "title1": "Download Instagram",
+      "title2": "Photo/Video",
+      "inputPlaceholder": "Insert Instagram Link Here...",
+      "paste": "PASTE",
+      "downloadBtn": "Download",
+      "formats": "Formats:",
+      "preview": "Preview",
+      "saving": "Saving...",
+      "saveMp4": "Save MP4",
+      "savePhotos": "Save Photos",
+      "recentHistory": "Recent History",
+      "clearHistory": "Clear History",
+      "emptyHistory": "No history yet. Paste an Instagram link and download.",
+      "promoTitle": "Instagram Platform",
+      "promoDesc": "Explore our platform for faster and easier downloading of Instagram photos and videos.",
+      "promoBtn": "Open Instagram"
+    }
+  },
+  "socialFacebook": {
+    "id": {
+      "deleteHistoryTitle": "Hapus semua riwayat?",
+      "deleteHistoryDescription": "Semua riwayat download Facebook akan dihapus permanen dan tidak bisa dikembalikan.",
+      "cancel": "Batal",
+      "delete": "Hapus",
+      "processing": "Memproses...",
+      "downloadNow": "Download Sekarang",
+      "availableFormats": "Format Tersedia",
+      "pastePlaceholder": "Tempel link video Facebook...",
+      "recentHistory": "Riwayat Terbaru",
+      "clearHistory": "Hapus Riwayat",
+      "preview": "Preview",
+      "saving": "Menyimpan...",
+      "saveMp4": "Simpan MP4",
+      "emptyHistory": "Mulai unduh konten Facebook favorit Anda untuk melihat riwayat di sini.",
+      "recommended": "REKOMENDASI",
+      "promoTitle": "Platform Facebook",
+      "promoDesc": "Jelajahi platform kami untuk unduhan video Facebook yang lebih cepat dan mudah.",
+      "openFacebook": "Buka Facebook",
+      "close": "Tutup",
+      "share": "Bagikan"
+    },
+    "en": {
+      "deleteHistoryTitle": "Delete all history?",
+      "deleteHistoryDescription": "All Facebook download history will be permanently deleted and cannot be restored.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "processing": "Processing...",
+      "downloadNow": "Download Now",
+      "availableFormats": "Available Formats",
+      "pastePlaceholder": "Paste Facebook video link...",
+      "recentHistory": "Recent History",
+      "clearHistory": "Clear History",
+      "preview": "Preview",
+      "saving": "Saving...",
+      "saveMp4": "Save MP4",
+      "emptyHistory": "Start downloading your favorite Facebook content to see history here.",
+      "recommended": "RECOMMENDED",
+      "promoTitle": "Facebook Platform",
+      "promoDesc": "Explore our platform for faster and easier downloading of Facebook videos.",
+      "openFacebook": "Open Facebook",
+      "close": "Close",
+      "share": "Share"
+    }
+  },
+  "socialYoutube": {
+    "id": {
+      "deleteHistoryTitle": "Hapus semua riwayat?",
+      "deleteHistoryDescription": "Semua riwayat download YouTube akan dihapus permanen dan tidak bisa dikembalikan.",
+      "platform": "Platform YouTube",
+      "title1": "Download YouTube",
+      "title2": "Video/Audio/Short",
+      "inputPlaceholder": "Masukkan link video YouTube di sini...",
+      "paste": "TEMPEL",
+      "processing": "Memproses...",
+      "downloadBtn": "Download",
+      "supportedFormats": "Format Didukung:",
+      "quality": "Kualitas",
+      "preview": "Preview",
+      "saving": "Menyimpan...",
+      "saveMp4": "Simpan MP4",
+      "saveMp3": "Simpan MP3",
+      "recentHistory": "Riwayat Terbaru",
+      "clearHistory": "Hapus Riwayat",
+      "emptyHistory": "Belum ada riwayat. Tempel link YouTube lalu klik download.",
+      "promoTitle": "Platform YouTube",
+      "promoDesc": "Jelajahi platform kami untuk unduhan video YouTube yang lebih cepat dan mudah.",
+      "openYoutube": "Buka YouTube",
+      "qualityTitle": "Kualitas",
+      "close": "CLOSE",
+      "share": "Bagikan",
+      "cancel": "Batal",
+      "delete": "Hapus"
+    },
+    "en": {
+      "deleteHistoryTitle": "Delete all history?",
+      "deleteHistoryDescription": "All YouTube download history will be permanently deleted and cannot be restored.",
+      "platform": "YouTube Platform",
+      "title1": "Download YouTube",
+      "title2": "Video/Audio/Short",
+      "inputPlaceholder": "Insert YouTube Video Link Here...",
+      "paste": "PASTE",
+      "processing": "Processing...",
+      "downloadBtn": "Download",
+      "supportedFormats": "Supported Formats:",
+      "quality": "Quality",
+      "preview": "Preview",
+      "saving": "Saving...",
+      "saveMp4": "Save MP4",
+      "saveMp3": "Save MP3",
+      "recentHistory": "Recent History",
+      "clearHistory": "Clear History",
+      "emptyHistory": "No history yet. Paste a YouTube link then click download.",
+      "promoTitle": "YouTube Platform",
+      "promoDesc": "Explore our platform for faster and easier downloading of YouTube videos.",
+      "openYoutube": "Open YouTube",
+      "qualityTitle": "Quality",
+      "close": "CLOSE",
+      "share": "Share",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  },
+  "socialThreads": {
+    "id": {
+      "deleteHistoryTitle": "Hapus semua riwayat?",
+      "deleteHistoryDescription": "Semua riwayat download Threads akan dihapus permanen dan tidak bisa dikembalikan.",
+      "cancel": "Batal",
+      "delete": "Hapus",
+      "close": "Tutup",
+      "preview": "Preview",
+      "downloadSlide": "Download Slide",
+      "preparingPreview": "Menyiapkan preview...",
+      "noPreviewYet": "Belum ada preview.",
+      "platform": "Platform Threads",
+      "title1": "Download Threads",
+      "title2": "Video/Gambar",
+      "subtitle": "Unduh video dan gambar dari Threads dengan kualitas terbaik.",
+      "inputPlaceholder": "Tempel link Threads di sini...",
+      "paste": "Tempel",
+      "fetchMetadata": "Ambil Metadata",
+      "fetchingData": "Mengambil data...",
+      "readyToDownload": "Siap diunduh",
+      "insertLinkFirst": "Masukkan link lalu ambil metadata",
+      "previewFallback": "Preview akan muncul setelah metadata berhasil diambil.",
+      "slide": "Slide",
+      "swipeHint": "Swipe kiri/kanan",
+      "noPreview": "Belum ada preview",
+      "downloadActiveSlide": "Download Slide Aktif",
+      "recentHistory": "Riwayat Terakhir",
+      "clearHistory": "Hapus Riwayat",
+      "emptyHistory": "Belum ada riwayat."
+    },
+    "en": {
+      "deleteHistoryTitle": "Delete all history?",
+      "deleteHistoryDescription": "All Threads download history will be permanently deleted and cannot be restored.",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "close": "Close",
+      "preview": "Preview",
+      "downloadSlide": "Download Slide",
+      "preparingPreview": "Preparing preview...",
+      "noPreviewYet": "No preview yet.",
+      "platform": "Threads Platform",
+      "title1": "Download Threads",
+      "title2": "Video/Image",
+      "subtitle": "Download videos and images from Threads in the best quality.",
+      "inputPlaceholder": "Paste Threads link here...",
+      "paste": "Paste",
+      "fetchMetadata": "Fetch Metadata",
+      "fetchingData": "Fetching data...",
+      "readyToDownload": "Ready to download",
+      "insertLinkFirst": "Insert link then fetch metadata",
+      "previewFallback": "Preview will appear after metadata is fetched.",
+      "slide": "Slide",
+      "swipeHint": "Swipe left/right",
+      "noPreview": "No preview yet",
+      "downloadActiveSlide": "Download Active Slide",
+      "recentHistory": "Recent History",
+      "clearHistory": "Clear History",
+      "emptyHistory": "No history yet."
+    }
+  }
+}

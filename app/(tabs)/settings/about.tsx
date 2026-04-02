@@ -10,6 +10,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { socialPalette } from "@/lib/pallate";
 
 const BG = socialPalette.bg;
@@ -18,6 +22,8 @@ const ACCENT = socialPalette.accent;
 
 export default function SettingsAboutScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.settingsAbout[language];
   const version =
     Constants.expoConfig?.version ??
     (Constants as any).manifest?.version ??
@@ -38,7 +44,7 @@ export default function SettingsAboutScreen() {
           <View className="flex-row items-center gap-3">
             <View className="h-[2px] w-8" style={{ backgroundColor: ACCENT }} />
             <Text className="text-social-accent font-black text-[10px] tracking-[0.2em] uppercase">
-              Application
+              {copy.application}
             </Text>
           </View>
 
@@ -56,7 +62,7 @@ export default function SettingsAboutScreen() {
               Media <Text style={{ color: ACCENT }}>Tools</Text>
             </Text>
             <Text className="text-slate-400 text-xs font-bold tracking-[0.15em] uppercase mt-2">
-              All-in-One Social Media Downloader
+              {copy.tagline}
             </Text>
             <View className="mt-3 px-3 py-1 rounded-full bg-white/5 border border-white/10">
               <Text className="text-[10px] font-black tracking-[0.2em] text-cyan-300 uppercase">
@@ -67,13 +73,10 @@ export default function SettingsAboutScreen() {
 
           <View className="rounded-[32px] p-6 border border-white/10 bg-white/[0.03]">
             <Text className="text-center text-sm font-black uppercase tracking-[0.15em] text-white/90 mb-3">
-              Tentang Aplikasi
+              {copy.aboutTitle}
             </Text>
             <Text className="text-slate-400 text-[13px] leading-relaxed text-center">
-              Media Tools adalah solusi lengkap untuk mengunduh konten media
-              dari berbagai platform sosial media populer. Kami menyediakan
-              akses cepat, aman, dan tanpa biaya untuk menyimpan video, foto,
-              dan musik favorit Anda dalam kualitas terbaik.
+              {copy.aboutDescription}
             </Text>
           </View>
 
@@ -83,7 +86,7 @@ export default function SettingsAboutScreen() {
                 500K+
               </Text>
               <Text className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                Unduhan
+                {copy.downloads}
               </Text>
             </View>
             <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03] items-center">
@@ -91,7 +94,7 @@ export default function SettingsAboutScreen() {
                 100K+
               </Text>
               <Text className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                Aktif
+                {copy.active}
               </Text>
             </View>
             <View className="flex-1 rounded-2xl p-4 border border-white/10 bg-white/[0.03] items-center">
@@ -99,7 +102,7 @@ export default function SettingsAboutScreen() {
                 12+
               </Text>
               <Text className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-                Platform
+                {copy.platform}
               </Text>
             </View>
           </View>
@@ -107,7 +110,7 @@ export default function SettingsAboutScreen() {
           <View>
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-sm font-cabinet font-black uppercase tracking-[0.15em] text-white">
-                Fitur Unggulan
+                {copy.features}
               </Text>
               <View className="flex-row gap-1">
                 {Array.from({ length: 5 }).map((_, idx) => (
@@ -175,7 +178,7 @@ export default function SettingsAboutScreen() {
                 </View>
                 <View className="gap-1">
                   <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-400">
-                    Dikembangkan oleh
+                    {copy.developedBy}
                   </Text>
                   <Text className="text-base font-bold text-white">
                     Rizki Ramadhan
@@ -186,7 +189,7 @@ export default function SettingsAboutScreen() {
 
             <View className="rounded-3xl p-5 border border-white/10 bg-white/[0.03]">
               <Text className="text-xs font-black uppercase tracking-[0.2em] text-slate-500 mb-3">
-                Pengakuan & Kredit
+                {copy.credits}
               </Text>
               <View className="flex-row flex-wrap gap-2">
                 {["React Native", "Expo", "Tailwind RN", "TypeScript"].map(
@@ -218,7 +221,7 @@ export default function SettingsAboutScreen() {
               >
                 <IconSymbol name="paperplane.fill" size={18} color="#fff" />
                 <Text className="text-xs font-black uppercase tracking-[0.2em] text-white">
-                  Hubungi Dukungan
+                  {copy.contactSupport}
                 </Text>
               </LinearGradient>
             </Pressable>
@@ -264,19 +267,19 @@ export default function SettingsAboutScreen() {
           <View className="items-center mt-2 pb-2">
             <View className="flex-row items-center gap-2 mb-2">
               <Text className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Terms
+                {copy.terms}
               </Text>
               <View className="w-1 h-1 rounded-full bg-slate-700" />
               <Text className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Privacy
+                {copy.privacy}
               </Text>
               <View className="w-1 h-1 rounded-full bg-slate-700" />
               <Text className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                Licenses
+                {copy.licenses}
               </Text>
             </View>
             <Text className="text-[9px] font-bold uppercase tracking-widest text-slate-600">
-              {"\u00A9"} 2026 Media Tools. Seluruh Hak Cipta Dilindungi.
+              {"\u00A9"} {copy.copyright}
             </Text>
           </View>
         </View>

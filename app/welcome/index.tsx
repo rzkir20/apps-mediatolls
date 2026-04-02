@@ -27,6 +27,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { STORAGE_KEY_WELCOME_COMPLETED } from "@/lib/config";
 
 import { socialPalette } from "@/lib/pallate";
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 
 type FeatureRow = {
   title: string;
@@ -163,6 +165,8 @@ function FeatureCard({ item }: { item: FeatureRow }) {
 
 export default function WelcomeOnboarding() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.welcome[language];
   const [currentSlide, setCurrentSlide] = useState(0);
   const totalSlides = slides.length;
   const floatY = useRef(new Animated.Value(0)).current;
@@ -212,7 +216,7 @@ export default function WelcomeOnboarding() {
   const slide = slides[currentSlide];
   const isFirst = currentSlide === 0;
   const isLast = currentSlide === totalSlides - 1;
-  const navLabel = isLast ? "Get Started" : "Next";
+  const navLabel = isLast ? copy.getStarted : copy.next;
 
   if (!fontsLoaded && !fontError) {
     return null;
@@ -370,7 +374,7 @@ export default function WelcomeOnboarding() {
 
           <Pressable onPress={() => void completeWelcome()}>
             <Text className="font-sans-bold text-xs font-bold uppercase tracking-widest text-slate-500">
-              Skip for now
+              {copy.skipForNow}
             </Text>
           </Pressable>
         </View>

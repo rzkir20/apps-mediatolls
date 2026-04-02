@@ -15,11 +15,14 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { socialPalette } from "@/lib/pallate";
 
 import { PLATFORM_TABS, isPlatformActive } from "@/components/ui/helper";
+import { useLanguage } from "@/context/LanguageContext";
 
 export function Header({
-  title = "MEDIA TOOLS",
+  title,
   onPressSystem,
 }: SocialHeaderProps) {
+  const { language } = useLanguage();
+  const resolvedTitle = title ?? (language === "id" ? "MEDIA TOOLS" : "MEDIA TOOLS");
   const router = useRouter();
   const pathname = usePathname() ?? "";
 
@@ -55,7 +58,7 @@ export function Header({
           </LinearGradient>
 
           <Text className="text-xl font-extrabold tracking-tight text-white">
-            {title}
+            {resolvedTitle}
           </Text>
         </View>
 

@@ -26,6 +26,10 @@ import {
 
 import { socialPalette } from "@/lib/pallate";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 type PermKey = "storage" | "camera" | "mic" | "gallery";
 
 type PermStatus = {
@@ -91,13 +95,15 @@ function GrantButton({
   granted,
   onPress,
   disabled,
+  grantedText,
 }: {
   label: string;
   granted: boolean;
   onPress: () => void;
   disabled?: boolean;
+  grantedText: string;
 }) {
-  const text = granted ? "Permission Granted" : label;
+  const text = granted ? grantedText : label;
   const baseClass =
     "w-full py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest";
   if (granted) {
@@ -132,6 +138,8 @@ function GrantButton({
 
 export default function PermissionSetupScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.permissionSetup[language];
 
   const [status, setStatus] = useState<PermStatus>({
     storage: false,
@@ -161,9 +169,9 @@ export default function PermissionSetupScreen() {
         mic: mic.status === "granted",
       });
     } catch (e) {
-      setErrorText(e instanceof Error ? e.message : "Terjadi kesalahan");
+      setErrorText(e instanceof Error ? e.message : copy.errorGeneric);
     }
-  }, []);
+  }, [copy.errorGeneric]);
 
   useEffect(() => {
     void refresh();
@@ -191,12 +199,12 @@ export default function PermissionSetupScreen() {
         const ok = res.status === "granted";
         setStatus((s) => ({ ...s, mic: ok }));
       } catch (e) {
-        setErrorText(e instanceof Error ? e.message : "Terjadi kesalahan");
+        setErrorText(e instanceof Error ? e.message : copy.errorGeneric);
       } finally {
         setBusyKey(null);
       }
     },
-    [busyKey],
+    [busyKey, copy.errorGeneric],
   );
 
   const onContinue = useCallback(async () => {
@@ -267,16 +275,16 @@ export default function PermissionSetupScreen() {
         <View className="flex-row items-center gap-3 mb-4">
           <View className="h-0.5 w-8" style={{ backgroundColor: ACCENT }} />
           <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-            Setup Required
+            {copy.setupRequired}
           </Text>
         </View>
         <Text className="font-cabinet text-4xl font-extrabold leading-[44px] tracking-tight text-white mb-3">
-          Grant{"\n"}
-          <Text style={{ color: ACCENT }}>Permissions</Text>
+          {copy.grant}
+          {"\n"}
+          <Text style={{ color: ACCENT }}>{copy.permissions}</Text>
         </Text>
         <Text className="text-slate-400 text-sm font-medium leading-relaxed">
-          Kami memerlukan izin Anda agar fitur aplikasi dapat berjalan dengan
-          optimal.
+          {copy.description}
         </Text>
       </View>
 
@@ -336,10 +344,11 @@ export default function PermissionSetupScreen() {
                 </Text>
 
                 <GrantButton
-                  label={isBusy ? "Requesting..." : c.buttonLabel}
+                  label={isBusy ? copy.requesting : c.buttonLabel}
                   granted={granted}
                   disabled={granted || isBusy}
                   onPress={() => void request(c.key)}
+                  grantedText={copy.permissionGranted}
                 />
               </GlassCard>
             );
@@ -361,13 +370,13 @@ export default function PermissionSetupScreen() {
           }}
         >
           <Text className="text-black font-black text-xs uppercase tracking-[0.2em]">
-            Continue
+            {copy.continue}
           </Text>
         </Pressable>
 
         <Pressable onPress={() => void onSkip()} className="w-full py-2 mt-3">
           <Text className="text-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            Skip for now
+            {copy.skipForNow}
           </Text>
         </Pressable>
       </View>

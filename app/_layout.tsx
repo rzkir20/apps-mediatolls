@@ -22,6 +22,8 @@ import { socialPalette } from "@/lib/pallate";
 
 import { PermissionProvider } from "@/context/PermissionContext";
 
+import { LanguageProvider } from "@/context/LanguageContext";
+
 import SplashScreen from "@/components/SplashScreen";
 
 const queryClient = new QueryClient();
@@ -53,42 +55,47 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <PermissionProvider>
-          <SafeAreaProvider>
-            <ThemeProvider value={DefaultTheme}>
-              <SafeAreaView style={{ flex: 1, backgroundColor: socialBg }}>
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                    contentStyle: { backgroundColor: socialBg },
-                  }}
-                >
-                  <Stack.Screen name="index" options={{ headerShown: false }} />
-                  <Stack.Screen
-                    name="welcome/index"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="permission/index"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="testimonials/index"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="system"
-                    options={{ headerShown: false }}
-                  />
-                  <Stack.Screen
-                    name="(tabs)"
-                    options={{ headerShown: false }}
-                  />
-                </Stack>
-              </SafeAreaView>
-            </ThemeProvider>
-          </SafeAreaProvider>
-        </PermissionProvider>
+        <LanguageProvider>
+          <PermissionProvider>
+            <SafeAreaProvider>
+              <ThemeProvider value={DefaultTheme}>
+                <SafeAreaView style={{ flex: 1, backgroundColor: socialBg }}>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: socialBg },
+                    }}
+                  >
+                    <Stack.Screen
+                      name="index"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="welcome/index"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="permission/index"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="testimonials"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="system"
+                      options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                      name="(tabs)"
+                      options={{ headerShown: false }}
+                    />
+                  </Stack>
+                </SafeAreaView>
+              </ThemeProvider>
+            </SafeAreaProvider>
+          </PermissionProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

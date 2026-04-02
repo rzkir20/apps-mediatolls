@@ -18,6 +18,10 @@ import { DialogInstagram } from "@/components/social/instagram/DialogInstagram";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import { useInstagramController } from "@/services/instagram.service";
 
 import { SupportedFormatCards } from "@/components/ui/card";
@@ -30,6 +34,8 @@ import { HistoryCard } from "@/components/ui/history-card";
 
 export default function InstagramScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.socialInstagram[language];
 
   const {
     url,
@@ -85,10 +91,10 @@ export default function InstagramScreen() {
     <View className="flex-1 bg-social-bg">
       <DeleteConfirmModal
         visible={isConfirmClearOpen}
-        title="Hapus semua riwayat?"
-        description="Semua riwayat download Instagram akan dihapus permanen dan tidak bisa dikembalikan."
-        cancelLabel="Batal"
-        confirmLabel="Hapus"
+        title={copy.deleteHistoryTitle}
+        description={copy.deleteHistoryDescription}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.delete}
         iconName="history.clear"
         iconColor="#f97373"
         onCancel={closeConfirmClearHistory}
@@ -105,19 +111,19 @@ export default function InstagramScreen() {
         speedText={downloadSpeedText ?? undefined}
         remainingText={downloadRemainingText ?? undefined}
         downloadedTotalText={
-          downloadTotalText ?? (isSaving ? "Saving..." : (saveText ?? ""))
+          downloadTotalText ?? (isSaving ? copy.saving : (saveText ?? ""))
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
         allowActionWhenCompleted={isDownloadReadyToSave}
         pauseLabel={
           downloadPercent >= 100 && isDownloadReadyToSave
-            ? "DOWNLOAD"
+            ? copy.download
             : isDownloadPaused
-              ? "RESUME DOWNLOAD"
-              : "PAUSE DOWNLOAD"
+              ? copy.resumeDownload
+              : copy.pauseDownload
         }
-        cancelLabel="CLOSE"
+        cancelLabel={copy.close}
         onPause={onTogglePauseOrSave}
         onCancel={closeDownloadModal}
         onRequestClose={closeDownloadModal}
@@ -131,8 +137,8 @@ export default function InstagramScreen() {
         formatText={
           downloadFileName.toLowerCase().includes("photo") ? "JPG/PNG" : "MP4"
         }
-        primaryActionLabel="Tutup"
-        secondaryActionLabel="Bagikan"
+        primaryActionLabel={copy.close}
+        secondaryActionLabel={copy.share}
         onPrimaryAction={closeDownloadSuccessModal}
         onSecondaryAction={onShareDownloaded}
         onBack={closeDownloadSuccessModal}
@@ -162,19 +168,20 @@ export default function InstagramScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              Instagram Platform
+              {copy.platform}
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-8">
-            Download Instagram{"\n"}
-            <Text className="text-social-accent">Photo/Video</Text>
+            {copy.title1}
+            {"\n"}
+            <Text className="text-social-accent">{copy.title2}</Text>
           </Text>
 
           <View className="flex flex-col gap-4">
             <TextInput
               value={url}
               onChangeText={setUrl}
-              placeholder="Insert Instagram Link Here..."
+              placeholder={copy.inputPlaceholder}
               placeholderTextColor={socialPalette.slate600}
               className="w-full bg-black border border-white/10 rounded-2xl py-5 px-6 text-sm font-medium text-white"
               autoCapitalize="none"
@@ -192,7 +199,7 @@ export default function InstagramScreen() {
                   color={socialPalette.slate500}
                 />
                 <Text className="font-bold text-sm tracking-widest text-white">
-                  TEMPEL
+                  {copy.paste}
                 </Text>
               </Pressable>
               <Pressable
@@ -220,11 +227,11 @@ export default function InstagramScreen() {
                 >
                   {isFetching ? (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Processing...
+                      {copy.processing}
                     </Text>
                   ) : (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Download
+                      {copy.downloadBtn}
                     </Text>
                   )}
                 </LinearGradient>
@@ -233,7 +240,7 @@ export default function InstagramScreen() {
 
             <View className="mt-6">
               <Text className="text-[10px] font-black tracking-widest uppercase text-social-slate-500 mb-4">
-                Formats:
+                {copy.formats}
               </Text>
               <SupportedFormatCards
                 cards={FORMAT_BADGES.map(({ label, icon }) => ({
@@ -363,7 +370,7 @@ export default function InstagramScreen() {
                           color={socialPalette.slate500}
                         />
                         <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                          Preview
+                          {copy.preview}
                         </Text>
                       </Pressable>
                       {(!!metadata?.videoUrl || !!previewUrl) &&
@@ -380,7 +387,7 @@ export default function InstagramScreen() {
                             color="#fff"
                           />
                           <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save MP4"}
+                            {isSaving ? copy.saving : copy.saveMp4}
                           </Text>
                         </Pressable>
                       ) : null}
@@ -394,7 +401,7 @@ export default function InstagramScreen() {
                         >
                           <IconSymbol name="photo" size={18} color="#fff" />
                           <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save Photos"}
+                            {isSaving ? copy.saving : copy.savePhotos}
                           </Text>
                         </Pressable>
                       ) : null}
@@ -415,7 +422,7 @@ export default function InstagramScreen() {
                 color={socialPalette.accent}
               />
               <Text className="text-2xl font-extrabold italic tracking-tight uppercase text-white shrink">
-                Recent <Text className="text-social-accent">History</Text>
+                {copy.recentHistory}
               </Text>
             </View>
             <Pressable
@@ -433,7 +440,7 @@ export default function InstagramScreen() {
                 className="text-[10px] font-black uppercase tracking-widest text-social-accent"
                 numberOfLines={1}
               >
-                Clear History
+                {copy.clearHistory}
               </Text>
             </Pressable>
           </View>
@@ -474,7 +481,7 @@ export default function InstagramScreen() {
                 />
               </View>
               <Text className="text-slate-500 text-xs font-medium text-center px-10">
-                Belum ada riwayat. Isi link Instagram lalu download.
+                {copy.emptyHistory}
               </Text>
             </View>
           )}
@@ -509,11 +516,10 @@ export default function InstagramScreen() {
 
             <View className="p-6">
               <Text className="text-lg font-extrabold text-white">
-                Instagram Platform
+                {copy.promoTitle}
               </Text>
               <Text className="text-social-slate-500 text-xs mt-1 mb-4 leading-relaxed">
-                Explore our platform for faster and easier downloading of
-                Instagram photos and videos.
+                {copy.promoDesc}
               </Text>
 
               <Pressable
@@ -521,7 +527,7 @@ export default function InstagramScreen() {
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
-                  Open Instagram
+                  {copy.promoBtn}
                 </Text>
               </Pressable>
             </View>

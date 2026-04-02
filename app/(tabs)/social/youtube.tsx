@@ -30,6 +30,8 @@ import { socialPalette } from "@/lib/pallate";
 import { SupportedFormatCards } from "@/components/ui/card";
 
 import { useYoutubeController } from "@/services/youtube.service";
+import { useLanguage } from "@/context/LanguageContext";
+import languageData from "@/lib/language.json";
 
 import { SUPPORTED_FORMAT_CARDS } from "@/components/ui/helper";
 
@@ -39,6 +41,8 @@ import { HistoryCard } from "@/components/ui/history-card";
 
 export default function YoutubeScreen() {
   const insets = useSafeAreaInsets();
+  const { language } = useLanguage();
+  const copy = languageData.socialYoutube[language];
   const { height: windowHeight } = useWindowDimensions();
   const qualitySheetBodyHeight = Math.max(
     220,
@@ -101,10 +105,10 @@ export default function YoutubeScreen() {
     <View className="flex-1 bg-social-bg">
       <DeleteConfirmModal
         visible={isConfirmClearOpen}
-        title="Hapus semua riwayat?"
-        description="Semua riwayat download YouTube akan dihapus permanen dan tidak bisa dikembalikan."
-        cancelLabel="Batal"
-        confirmLabel="Hapus"
+        title={copy.deleteHistoryTitle}
+        description={copy.deleteHistoryDescription}
+        cancelLabel={copy.cancel}
+        confirmLabel={copy.delete}
         iconName="history.clear"
         iconColor="#f97373"
         onCancel={closeConfirmClearHistory}
@@ -121,7 +125,7 @@ export default function YoutubeScreen() {
         speedText={downloadSpeedText ?? undefined}
         remainingText={downloadRemainingText ?? undefined}
         downloadedTotalText={
-          downloadTotalText ?? (isSaving ? "Saving..." : (saveText ?? ""))
+          downloadTotalText ?? (isSaving ? copy.saving : (saveText ?? ""))
         }
         isPaused={isDownloadPaused}
         isSaving={isSaving}
@@ -147,8 +151,8 @@ export default function YoutubeScreen() {
         formatText={
           downloadFileName.toLowerCase().includes("mp3") ? "MP3" : "MP4"
         }
-        primaryActionLabel="Tutup"
-        secondaryActionLabel="Bagikan"
+        primaryActionLabel={copy.close}
+        secondaryActionLabel={copy.share}
         onPrimaryAction={closeDownloadSuccessModal}
         onSecondaryAction={onShareDownloaded}
         onBack={closeDownloadSuccessModal}
@@ -178,19 +182,20 @@ export default function YoutubeScreen() {
           <View className="flex-row items-center gap-3 mb-3">
             <View className="h-0.5 w-8 bg-social-accent" />
             <Text className="font-black text-[10px] tracking-[0.2em] uppercase text-social-accent">
-              YouTube Platform
+              {copy.platform}
             </Text>
           </View>
           <Text className="text-4xl font-extrabold leading-tight tracking-tight text-white mb-3">
-            Download YouTube{"\n"}
-            <Text className="text-social-accent">Video/Audio/Short</Text>
+            {copy.title1}
+            {"\n"}
+            <Text className="text-social-accent">{copy.title2}</Text>
           </Text>
 
           <View className="flex flex-col gap-4">
             <TextInput
               value={url}
               onChangeText={setUrl}
-              placeholder="Insert YouTube Video Link Here..."
+              placeholder={copy.inputPlaceholder}
               placeholderTextColor={socialPalette.slate600}
               className="w-full bg-black border border-white/10 rounded-2xl py-5 px-6 text-sm font-medium text-white"
               autoCapitalize="none"
@@ -208,7 +213,7 @@ export default function YoutubeScreen() {
                   color={socialPalette.slate500}
                 />
                 <Text className="font-bold text-sm tracking-widest text-white">
-                  TEMPEL
+                  {copy.paste}
                 </Text>
               </Pressable>
               <Pressable
@@ -236,11 +241,11 @@ export default function YoutubeScreen() {
                 >
                   {isFetching ? (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Processing...
+                      {copy.processing}
                     </Text>
                   ) : (
                     <Text className="font-black text-sm tracking-widest text-white uppercase">
-                      Download
+                      {copy.downloadBtn}
                     </Text>
                   )}
                 </LinearGradient>
@@ -249,7 +254,7 @@ export default function YoutubeScreen() {
 
             <View className="mt-6">
               <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-4">
-                Supported Formats:
+                {copy.supportedFormats}
               </Text>
               <SupportedFormatCards
                 cards={SUPPORTED_FORMAT_CARDS}
@@ -313,7 +318,7 @@ export default function YoutubeScreen() {
                     {!!videoInfo?.formatOptions?.length ? (
                       <View className="mt-3">
                         <Text className="text-[10px] font-black text-social-slate-500 tracking-widest uppercase mb-2">
-                          Quality
+                          {copy.quality}
                         </Text>
 
                         <Pressable
@@ -332,7 +337,7 @@ export default function YoutubeScreen() {
                               ) ?? opts[0];
                             return (
                               <Text className="text-[10px] font-black tracking-widest uppercase text-white">
-                                {activeOpt?.label ?? "Quality"}
+                                {activeOpt?.label ?? copy.quality}
                               </Text>
                             );
                           })()}
@@ -360,7 +365,7 @@ export default function YoutubeScreen() {
                           color={socialPalette.slate500}
                         />
                         <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                          Preview
+                          {copy.preview}
                         </Text>
                       </Pressable>
                       <Pressable
@@ -371,7 +376,7 @@ export default function YoutubeScreen() {
                       >
                         <IconSymbol name="arrow.down" size={18} color="#fff" />
                         <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                          {isSaving ? "Saving..." : "Save MP4"}
+                          {isSaving ? copy.saving : copy.saveMp4}
                         </Text>
                       </Pressable>
                       {audioAvailable ? (
@@ -387,7 +392,7 @@ export default function YoutubeScreen() {
                             color="#fff"
                           />
                           <Text className="text-white text-[10px] font-black tracking-widest uppercase">
-                            {isSaving ? "Saving..." : "Save MP3"}
+                            {isSaving ? copy.saving : copy.saveMp3}
                           </Text>
                         </Pressable>
                       ) : null}
@@ -400,7 +405,7 @@ export default function YoutubeScreen() {
             <BottomSheets
               visible={isQualitySheetOpen}
               onClose={closeQualitySheet}
-              title="Quality"
+              title={copy.qualityTitle}
             >
               <View
                 style={{
@@ -471,7 +476,7 @@ export default function YoutubeScreen() {
                 color={socialPalette.accent}
               />
               <Text className="text-2xl font-extrabold italic tracking-tight uppercase text-white shrink">
-                Recent <Text className="text-social-accent">History</Text>
+                {copy.recentHistory}
               </Text>
             </View>
             <Pressable
@@ -489,7 +494,7 @@ export default function YoutubeScreen() {
                 className="text-[10px] font-black uppercase tracking-widest text-social-accent"
                 numberOfLines={1}
               >
-                Clear History
+                {copy.clearHistory}
               </Text>
             </Pressable>
           </View>
@@ -529,7 +534,7 @@ export default function YoutubeScreen() {
                 />
               </View>
               <Text className="text-slate-500 text-xs font-medium text-center px-10 leading-relaxed">
-                Belum ada riwayat. Tempel link YouTube lalu klik download.
+                {copy.emptyHistory}
               </Text>
             </View>
           )}
@@ -564,11 +569,10 @@ export default function YoutubeScreen() {
 
             <View className="p-6">
               <Text className="text-lg font-extrabold text-white">
-                Youtube Platform
+                {copy.promoTitle}
               </Text>
               <Text className="text-social-slate-500 text-xs mt-1 mb-4 leading-relaxed">
-                Explore our platform for faster and easier downloading of
-                YouTube videos.
+                {copy.promoDesc}
               </Text>
 
               <Pressable
@@ -576,7 +580,7 @@ export default function YoutubeScreen() {
                 className="self-start px-6 py-3 rounded-full bg-social-accent active:opacity-90"
               >
                 <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
-                  Open Youtube
+                  {copy.openYoutube}
                 </Text>
               </Pressable>
             </View>

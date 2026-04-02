@@ -27,6 +27,10 @@ import { DownloadProgressModal } from "@/components/ui/download-modal";
 
 import { socialPalette } from "@/lib/pallate";
 
+import { useLanguage } from "@/context/LanguageContext";
+
+import languageData from "@/lib/language.json";
+
 import {
   useStateConvertDoc,
   useStatePdfToExcel,
@@ -105,6 +109,8 @@ type PickedFile = {
 export default function FilesScreen() {
   const insets = useSafeAreaInsets();
   const tabBarOffset = 88 + insets.bottom;
+  const { language } = useLanguage();
+  const copy = languageData.files[language];
 
   const [formatIndex, setFormatIndex] = useState(0);
   const [quality, setQuality] = useState<1 | 2 | 3>(3);
@@ -167,7 +173,12 @@ export default function FilesScreen() {
           ppt.onFileChange(selectedOutputKey === "pptx" ? f : null);
           setPickedFile(
             f
-              ? { name: f.name, uri: "", size: f.size ?? null, mimeType: f.type }
+              ? {
+                  name: f.name,
+                  uri: "",
+                  size: f.size ?? null,
+                  mimeType: f.type,
+                }
               : null,
           );
         };
@@ -202,9 +213,9 @@ export default function FilesScreen() {
       ppt.onFileChange(selectedOutputKey === "pptx" ? upload : null);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert("Tidak bisa membuka file", msg);
+      Alert.alert(copy.cannotOpenFile, msg);
     }
-  }, [haptic, onFileChange, excel, ppt, selectedOutputKey]);
+  }, [copy.cannotOpenFile, haptic, onFileChange, excel, ppt, selectedOutputKey]);
 
   const onConvertNow = useCallback(() => {
     if (selectedOutputKey === "pdf" || selectedOutputKey === "docx") {
@@ -227,21 +238,19 @@ export default function FilesScreen() {
 
       <DownloadProgressModal
         visible={convertingAny}
-        fileName={pickedFile?.name ?? "Konversi dokumen"}
+        fileName={pickedFile?.name ?? copy.convertingDoc}
         progressPercent={convertingAny ? 50 : 0}
         statusPillText="Converting"
         statusSubText="Completed"
         speedText={undefined}
         remainingText={undefined}
-        downloadedTotalText={
-          convertingAny ? "Sedang mengonversi dokumen..." : ""
-        }
+        downloadedTotalText={convertingAny ? copy.convertingText : ""}
         qualityText={qualityLabel.toUpperCase()}
         isPaused={false}
         isSaving={convertingAny}
         allowActionWhenCompleted={false}
-        pauseLabel="SEDANG KONVERSI"
-        cancelLabel="TUTUP"
+        pauseLabel={copy.pauseConverting}
+        cancelLabel={copy.close}
         onPause={() => {}}
         onCancel={() => {}}
         onRequestClose={() => {}}
@@ -259,12 +268,13 @@ export default function FilesScreen() {
               style={{ backgroundColor: socialPalette.accent }}
             />
             <Text className="text-[10px] font-black uppercase tracking-[0.2em] text-social-accent">
-              Format Factory
+              {copy.formatFactory}
             </Text>
           </View>
           <Text className="font-cabinet text-4xl font-extrabold leading-tight tracking-tight text-white">
-            Document{"\n"}
-            <Text className="text-social-accent">Converter</Text>
+            {copy.document}
+            {"\n"}
+            <Text className="text-social-accent">{copy.converter}</Text>
           </Text>
         </View>
 
@@ -297,19 +307,19 @@ export default function FilesScreen() {
                 <Text className="text-xs text-social-slate-500 mb-1">
                   {pickedFile.size != null
                     ? formatBytes(pickedFile.size)
-                    : "Ukuran tidak diketahui"}
+                    : copy.unknownSize}
                 </Text>
                 <Text className="text-[10px] text-social-accent font-bold mb-4">
-                  Ketuk untuk ganti file
+                  {copy.tapToChangeFile}
                 </Text>
               </>
             ) : (
               <>
                 <Text className="text-lg font-bold text-white mb-2">
-                  Ready to convert?
+                  {copy.readyToConvert}
                 </Text>
                 <Text className="text-xs text-social-slate-500 mb-6 max-w-[200px] text-center leading-relaxed">
-                  Tap untuk memilih dokumen dari perangkat Anda
+                  {copy.pickFromDevice}
                 </Text>
               </>
             )}
@@ -324,7 +334,7 @@ export default function FilesScreen() {
               }}
             >
               <Text className="text-white text-xs font-black uppercase tracking-widest">
-                {pickedFile ? "Ganti file" : "Choose File"}
+                {pickedFile ? copy.replaceFile : copy.chooseFile}
               </Text>
             </View>
           </Pressable>
@@ -332,7 +342,7 @@ export default function FilesScreen() {
 
         <View className="px-6 mb-10">
           <Text className="text-[10px] font-black uppercase tracking-widest text-social-slate-500 mb-4 px-2">
-            Supported Formats
+            {copy.supportedFormats}
           </Text>
           <View className="flex-row flex-wrap gap-3 justify-between">
             {SUPPORTED_FORMATS.map((f) => (
@@ -359,7 +369,7 @@ export default function FilesScreen() {
           <View className="p-6 rounded-[32px] bg-social-card-from border border-white/5">
             <View className="mb-6">
               <Text className="text-[10px] font-black text-social-slate-500 uppercase tracking-widest mb-3">
-                Convert to
+                {copy.convertTo}
               </Text>
               <Pressable
                 onPress={() => {
@@ -382,7 +392,7 @@ export default function FilesScreen() {
             <View>
               <View className="flex-row justify-between items-center mb-4">
                 <Text className="text-[10px] font-black text-social-slate-500 uppercase tracking-widest">
-                  Output Quality
+                  {copy.outputQuality}
                 </Text>
                 <Text className="text-[10px] font-black text-social-accent uppercase tracking-widest">
                   {qualityLabel}
@@ -463,18 +473,19 @@ export default function FilesScreen() {
               <View className="py-4 bg-social-accent items-center justify-center">
                 <Text className="text-white text-xs font-black uppercase tracking-widest">
                   {convertingAny
-                    ? "Converting..."
-                    : selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+                    ? copy.converting
+                    : selectedOutputKey === "pdf" ||
+                        selectedOutputKey === "docx"
                       ? file
-                        ? `Convert sekarang (${targetFormat.toUpperCase()})`
-                        : "Pilih file dulu"
+                        ? `${copy.convertNow} (${targetFormat.toUpperCase()})`
+                        : copy.chooseFileFirst
                       : selectedOutputKey === "xlsx"
                         ? excel.file
-                          ? "Convert sekarang (XLSX)"
-                          : "Pilih PDF dulu"
+                          ? `${copy.convertNow} (XLSX)`
+                          : copy.choosePdfFirst
                         : ppt.file
-                          ? "Convert sekarang (PPTX)"
-                          : "Pilih PDF dulu"}
+                          ? `${copy.convertNow} (PPTX)`
+                          : copy.choosePdfFirst}
                 </Text>
               </View>
             </Pressable>
@@ -484,7 +495,7 @@ export default function FilesScreen() {
         <View className="px-6 pb-4">
           <View className="flex-row items-center justify-between mb-6 px-2">
             <Text className="text-[10px] font-black uppercase tracking-widest text-social-slate-500">
-              Recent Conversions
+              {copy.recentConversions}
             </Text>
             <Pressable
               onPress={onClearRecent}
@@ -497,7 +508,7 @@ export default function FilesScreen() {
                     : "text-social-accent"
                 }`}
               >
-                Clear All
+                {copy.clearAll}
               </Text>
             </Pressable>
           </View>
@@ -548,7 +559,7 @@ export default function FilesScreen() {
       <BottomSheets
         visible={formatModalOpen}
         onClose={() => setFormatModalOpen(false)}
-        title="Convert to"
+        title={copy.convertTo}
       >
         <View className="pb-8">
           {OUTPUT_FORMATS.map((label, i) => (
