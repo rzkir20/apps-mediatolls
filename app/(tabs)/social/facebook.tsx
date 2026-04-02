@@ -368,6 +368,7 @@ export default function FacebookScreen() {
         <View className="px-6 mb-10">
           <View className="flex-row items-center justify-between mb-6">
             <View className="flex-row items-center gap-2 flex-1 mr-3">
+              <IconSymbol name="history" size={24} color={FB_BLUE} />
               <Text className="text-2xl font-extrabold italic tracking-tight uppercase text-white shrink">
                 {copy.recentHistory}
               </Text>
@@ -378,14 +379,10 @@ export default function FacebookScreen() {
               className="flex-row items-center gap-1.5 active:opacity-80"
               style={{ opacity: history?.length ? 1 : 0.45 }}
             >
-              <IconSymbol
-                name="history.clear"
-                size={16}
-                color={socialPalette.slate500}
-              />
+              <IconSymbol name="history.clear" size={16} color={FB_BLUE} />
               <Text
                 className="text-[10px] font-black uppercase tracking-widest"
-                style={{ color: socialPalette.slate500 }}
+                style={{ color: FB_BLUE }}
                 numberOfLines={1}
               >
                 {copy.clearHistory}
@@ -422,15 +419,14 @@ export default function FacebookScreen() {
               ))}
             </View>
           ) : (
-            <View className="border-2 border-dashed border-white/5 rounded-[40px] py-10 items-center justify-center bg-black/20">
-              <View className="w-14 h-14 rounded-full items-center justify-center mb-4 bg-white/5 border border-white/10">
-                <IconSymbol
-                  name="history"
-                  size={28}
-                  color={socialPalette.slate500}
-                />
+            <View className="border-2 border-dashed border-white/5 rounded-3xl py-10 items-center justify-center">
+              <View
+                className="w-12 h-12 rounded-full items-center justify-center mb-3 border border-white/10"
+                style={{ backgroundColor: "rgba(24, 119, 242, 0.12)" }}
+              >
+                <IconSymbol name="history" size={28} color={FB_BLUE} />
               </View>
-              <Text className="text-slate-500 text-[11px] font-bold px-10 text-center leading-relaxed tracking-wide uppercase">
+              <Text className="text-slate-500 text-xs font-medium text-center px-10">
                 {copy.emptyHistory}
               </Text>
             </View>
@@ -439,7 +435,7 @@ export default function FacebookScreen() {
 
         {/* Promo */}
         <View className="px-6">
-          <View className="rounded-[40px] border border-white/10 overflow-hidden relative">
+          <View className="rounded-[32px] border border-white/5 overflow-hidden relative">
             <LinearGradient
               colors={["#12131a", "#05060f"]}
               start={{ x: 0, y: 0 }}
@@ -460,41 +456,41 @@ export default function FacebookScreen() {
               style={{
                 position: "absolute",
                 right: -16,
-                bottom: -16,
+                top: -16,
                 transform: [{ rotate: "-12deg" }],
               }}
             />
 
-            <View className="p-8">
+            <View className="p-6">
               <View
-                className="self-start flex-row items-center gap-2 px-3 py-1 rounded-full mb-4"
-                style={{ backgroundColor: "rgba(255,61,87,0.10)" }}
+                className="self-start flex-row items-center gap-2 px-3 py-1.5 rounded-full mb-3 border"
+                style={{
+                  backgroundColor: "rgba(24, 119, 242, 0.12)",
+                  borderColor: "rgba(24, 119, 242, 0.25)",
+                }}
               >
-                <IconSymbol
-                  name="sparkles"
-                  size={14}
-                  color={socialPalette.accent}
-                />
+                <IconSymbol name="sparkles" size={14} color={FB_BLUE} />
                 <Text
                   className="text-[9px] font-black uppercase tracking-widest"
-                  style={{ color: socialPalette.accent }}
+                  style={{ color: FB_BLUE }}
                 >
                   {copy.recommended}
                 </Text>
               </View>
 
-              <Text className="text-2xl font-extrabold text-white mb-2">
+              <Text className="text-lg font-extrabold text-white mb-2">
                 {copy.promoTitle}
               </Text>
-              <Text className="text-social-slate-500 text-xs mb-6 leading-relaxed max-w-[220px]">
+              <Text className="text-social-slate-500 text-xs mb-4 leading-relaxed">
                 {copy.promoDesc}
               </Text>
 
               <Pressable
                 onPress={onOpenFacebookApp}
-                className="self-start px-8 py-4 rounded-2xl bg-white active:opacity-90"
+                className="self-start px-6 py-3 rounded-full active:opacity-90"
+                style={{ backgroundColor: FB_BLUE }}
               >
-                <Text className="text-black font-black text-[10px] tracking-[0.2em] uppercase">
+                <Text className="text-white font-extrabold text-[10px] tracking-widest uppercase">
                   {copy.openFacebook}
                 </Text>
               </Pressable>

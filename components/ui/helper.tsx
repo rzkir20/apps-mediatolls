@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { useVideoPlayer, VideoView } from "expo-video";
 
@@ -313,6 +313,118 @@ export const FORMAT_BADGES_FACEBOOK = [
   { label: "MOV", icon: "video" as const, tint: FB_BLUE },
   { label: "MP3", icon: "file.mp3" as const, tint: "#fb923c" },
 ] as const;
+
+const PHOTO_SLIDESHOW_DOT_ROW_MAX = 12;
+
+const slideshowChip = {
+  padH: 14,
+  padV: 8,
+  radius: 999,
+  border: "rgba(255,255,255,0.14)",
+  fill: "rgba(6,7,15,0.72)",
+} as const;
+
+export function PhotoSlideshowDots({
+  total,
+  activeIndex,
+  accentColor,
+}: {
+  total: number;
+  activeIndex: number;
+  accentColor: string;
+}) {
+  if (total <= 0) return null;
+  const safe = Math.min(Math.max(0, activeIndex), total - 1);
+
+  const shell = (children: ReactNode, extraMinWidth?: number) => (
+    <View
+      pointerEvents="none"
+      className="self-center"
+      style={{
+        borderRadius: slideshowChip.radius,
+        borderWidth: 1,
+        borderColor: slideshowChip.border,
+        backgroundColor: slideshowChip.fill,
+        paddingHorizontal: slideshowChip.padH,
+        paddingVertical: slideshowChip.padV,
+        minWidth: extraMinWidth,
+        // soft edge on photos
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
+        elevation: 4,
+      }}
+    >
+      {children}
+    </View>
+  );
+
+  if (total > PHOTO_SLIDESHOW_DOT_ROW_MAX) {
+    const w = total > 0 ? (safe + 1) / total : 0;
+    const trackW = 104;
+    const fillW = Math.max(4, Math.round(trackW * w));
+    return shell(
+      <View className="items-center" style={{ gap: 8 }}>
+        <View className="flex-row items-baseline" style={{ gap: 3 }}>
+          <Text
+            className="text-[12px] font-black tabular-nums"
+            style={{ color: accentColor }}
+          >
+            {safe + 1}
+          </Text>
+          <Text className="text-[11px] font-semibold tabular-nums text-white/35">
+            /
+          </Text>
+          <Text className="text-[11px] font-semibold tabular-nums text-white/60">
+            {total}
+          </Text>
+        </View>
+        <View
+          style={{
+            width: trackW,
+            height: 3,
+            borderRadius: 2,
+            backgroundColor: "rgba(255,255,255,0.12)",
+            overflow: "hidden",
+          }}
+        >
+          <View
+            style={{
+              width: fillW,
+              height: "100%",
+              borderRadius: 2,
+              backgroundColor: accentColor,
+            }}
+          />
+        </View>
+      </View>,
+      108,
+    );
+  }
+
+  return shell(
+    <View className="flex-row items-center" style={{ gap: 6 }}>
+      {Array.from({ length: total }, (_, idx) => {
+        const active = idx === safe;
+        return (
+          <View
+            key={`photo-dot-${idx}`}
+            style={{
+              width: active ? 18 : 5,
+              height: 5,
+              borderRadius: 3,
+              backgroundColor: active
+                ? accentColor
+                : "rgba(255,255,255,0.38)",
+              opacity: active ? 1 : 0.75,
+            }}
+          />
+        );
+      })}
+    </View>,
+  );
+}
 
 //================================ Folders Name For Social Platforms =================================//
 export function getPlatformAlbumName(

@@ -28,7 +28,7 @@ import { DialogTiktok } from "@/components/social/tiktok/DialogTiktok";
 
 import { SupportedFormatCards } from "@/components/ui/card";
 
-import { FORMAT_BADGES } from "@/components/ui/helper";
+import { FORMAT_BADGES, PhotoSlideshowDots } from "@/components/ui/helper";
 
 import { DeleteConfirmModal } from "@/components/ui/delete";
 
@@ -317,26 +317,12 @@ export default function HomeScreen() {
                           ))}
                         </ScrollView>
 
-                        <View className="absolute bottom-3 left-0 right-0 items-center">
-                          <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-black/40 border border-white/10">
-                            {(metadata.images ?? []).map((_, idx) => {
-                              const active = idx === coverPhotoIndex;
-                              return (
-                                <View
-                                  key={`cover-dot-${idx}`}
-                                  className="rounded-full"
-                                  style={{
-                                    width: active ? 16 : 6,
-                                    height: 6,
-                                    backgroundColor: active
-                                      ? socialPalette.accent
-                                      : "rgba(255,255,255,0.35)",
-                                    opacity: active ? 1 : 0.9,
-                                  }}
-                                />
-                              );
-                            })}
-                          </View>
+                        <View className="absolute bottom-4 left-0 right-0 items-center px-4">
+                          <PhotoSlideshowDots
+                            total={(metadata.images ?? []).length}
+                            activeIndex={coverPhotoIndex}
+                            accentColor={socialPalette.accent}
+                          />
                         </View>
                       </>
                     ) : metadata.cover ? (

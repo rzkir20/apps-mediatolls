@@ -178,7 +178,7 @@ type DialogInstagramProps = {
   saveText: string | null;
 
   onDownloadVideoMp4: () => void;
-  onDownloadPhotos: () => void;
+  onDownloadPhotos: (activePhotoIndex?: number) => void | Promise<void>;
 };
 
 //======================= Instagram Types =======================//

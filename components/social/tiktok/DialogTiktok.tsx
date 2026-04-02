@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
 
-import { PreviewVideo } from "@/components/ui/helper";
+import { PhotoSlideshowDots, PreviewVideo } from "@/components/ui/helper";
 
 import LoadingMediaPlayer from "@/components/LoadingMediaPlayer";
 
@@ -160,26 +160,12 @@ export function DialogTiktok({
             ))}
           </ScrollView>
 
-          <View className="absolute bottom-3 left-0 right-0 items-center">
-            <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-black/40 border border-white/10">
-              {(metadata?.images ?? []).map((_, idx) => {
-                const active = idx === photoPreviewIndex;
-                return (
-                  <View
-                    key={`dot-${idx}`}
-                    className="rounded-full"
-                    style={{
-                      width: active ? 18 : 7,
-                      height: 7,
-                      backgroundColor: active
-                        ? socialPalette.accent
-                        : "rgba(255,255,255,0.35)",
-                      opacity: active ? 1 : 0.9,
-                    }}
-                  />
-                );
-              })}
-            </View>
+          <View className="absolute bottom-4 left-0 right-0 items-center px-4">
+            <PhotoSlideshowDots
+              total={(metadata?.images ?? []).length}
+              activeIndex={photoPreviewIndex}
+              accentColor={socialPalette.accent}
+            />
           </View>
         </View>
       ) : !!previewUrl ? (

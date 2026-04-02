@@ -325,6 +325,15 @@ export function useInstagramController() {
   const metadata = metadataQuery.data ?? null;
   const isFetching = metadataQuery.isFetching;
 
+  const slideshowImagesKey = useMemo(
+    () => (metadata?.images ?? []).join("|"),
+    [metadata?.images],
+  );
+
+  useEffect(() => {
+    setUi({ coverPhotoIndex: 0 });
+  }, [slideshowImagesKey, setUi]);
+
   const videoInfo = useMemo(() => {
     if (!metadata || !baseUrl || !url.trim()) return null;
     return buildVideoInfo(metadata, baseUrl, url);
@@ -347,10 +356,15 @@ export function useInstagramController() {
     (e: { nativeEvent: { contentOffset: { x: number } } }) => {
       const w = coverWidth || 0;
       if (!w) return;
-      const idx = Math.round(e.nativeEvent.contentOffset.x / w);
-      setUi({ coverPhotoIndex: Math.max(0, idx) });
+      const n = metadata?.images?.length ?? 0;
+      const maxIdx = n > 0 ? n - 1 : 0;
+      const idx = Math.min(
+        maxIdx,
+        Math.max(0, Math.round(e.nativeEvent.contentOffset.x / w)),
+      );
+      setUi({ coverPhotoIndex: idx });
     },
-    [coverWidth, setUi],
+    [coverWidth, metadata?.images?.length, setUi],
   );
 
   const onOpenInstagramApp = useCallback(async () => {
@@ -800,36 +814,55 @@ export function useInstagramController() {
     setUi,
   ]);
 
-  const onDownloadPhotos = useCallback(async () => {
-    const title = metadata?.text?.trim();
-    startDownloadUi({
-      fileName: title ? `${title} (Photos)` : "Instagram Photos",
-      kind: "photos",
-    });
-
-    if (!url.trim() || !baseUrl || isSaving) return;
-    try {
+  const onDownloadPhotos = useCallback(
+    async (activePhotoIndex?: number) => {
       const images = (metadata?.images ?? [])?.filter(Boolean) ?? [];
-      if (!images.length) throw new Error("Foto tidak tersedia untuk post ini");
-      await downloadPhotosMutation.mutateAsync({ imageUrls: images });
-    } catch (e) {
-      const msg = getErrorMessage(e, "Gagal download foto");
-      setUi({
-        downloadPercent: 100,
-        downloadPillText: "Failed",
-        downloadSubText: msg,
+      const rawIdx =
+        typeof activePhotoIndex === "number"
+          ? activePhotoIndex
+          : coverPhotoIndex;
+      const idx =
+        images.length > 0
+          ? Math.max(0, Math.min(images.length - 1, rawIdx))
+          : 0;
+
+      const title = metadata?.text?.trim();
+      startDownloadUi({
+        fileName: title
+          ? `${title} (Photo ${idx + 1})`
+          : `Instagram Photo ${idx + 1}`,
+        kind: "photos",
       });
-      throw e;
-    }
-  }, [
-    metadata,
-    startDownloadUi,
-    url,
-    baseUrl,
-    isSaving,
-    downloadPhotosMutation,
-    setUi,
-  ]);
+
+      if (!url.trim() || !baseUrl || isSaving) return;
+      try {
+        if (!images.length)
+          throw new Error("Foto tidak tersedia untuk post ini");
+        const selected = images[idx];
+        if (!selected)
+          throw new Error("Foto tidak tersedia untuk post ini");
+        await downloadPhotosMutation.mutateAsync({ imageUrls: [selected] });
+      } catch (e) {
+        const msg = getErrorMessage(e, "Gagal download foto");
+        setUi({
+          downloadPercent: 100,
+          downloadPillText: "Failed",
+          downloadSubText: msg,
+        });
+        throw e;
+      }
+    },
+    [
+      metadata,
+      coverPhotoIndex,
+      startDownloadUi,
+      url,
+      baseUrl,
+      isSaving,
+      downloadPhotosMutation,
+      setUi,
+    ],
+  );
 
   const onTogglePauseOrSave = useCallback(async () => {
     if (downloadPercent >= 100 && isDownloadReadyToSave) {

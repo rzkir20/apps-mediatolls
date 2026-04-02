@@ -262,6 +262,15 @@ export function useTiktokController() {
   const metadata = metadataQuery.data ?? null;
   const isFetching = metadataQuery.isFetching;
 
+  const slideshowImagesKey = useMemo(
+    () => (metadata?.images ?? []).join("|"),
+    [metadata?.images],
+  );
+
+  useEffect(() => {
+    setUi({ coverPhotoIndex: 0, photoPreviewIndex: 0 });
+  }, [slideshowImagesKey, setUi]);
+
   const onPaste = useCallback(async () => {
     const text = await Clipboard.getStringAsync();
     if (text) setUi({ url: text.trim() });
@@ -408,22 +417,26 @@ export function useTiktokController() {
     (e: any) => {
       const w = previewWidth || 0;
       if (!w) return;
+      const n = metadata?.images?.length ?? 0;
+      const maxIdx = n > 0 ? n - 1 : 0;
       const x = e?.nativeEvent?.contentOffset?.x ?? 0;
-      const idx = Math.round(x / w);
-      setUi({ photoPreviewIndex: Math.max(0, idx) });
+      const idx = Math.min(maxIdx, Math.max(0, Math.round(x / w)));
+      setUi({ photoPreviewIndex: idx });
     },
-    [previewWidth, setUi],
+    [previewWidth, metadata?.images?.length, setUi],
   );
 
   const onCoverPhotoScrollEnd = useCallback(
     (e: any) => {
       const w = coverWidth || 0;
       if (!w) return;
+      const n = metadata?.images?.length ?? 0;
+      const maxIdx = n > 0 ? n - 1 : 0;
       const x = e?.nativeEvent?.contentOffset?.x ?? 0;
-      const idx = Math.round(x / w);
-      setUi({ coverPhotoIndex: Math.max(0, idx) });
+      const idx = Math.min(maxIdx, Math.max(0, Math.round(x / w)));
+      setUi({ coverPhotoIndex: idx });
     },
-    [coverWidth, setUi],
+    [coverWidth, metadata?.images?.length, setUi],
   );
 
   const closePreview = useCallback(() => {

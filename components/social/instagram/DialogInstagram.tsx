@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
 
-import { PreviewVideo } from "@/components/ui/helper";
+import { PhotoSlideshowDots, PreviewVideo } from "@/components/ui/helper";
 
 import LoadingMediaPlayer from "@/components/LoadingMediaPlayer";
 
@@ -36,6 +36,15 @@ export function DialogInstagram({
   const [previewWidth, setPreviewWidth] = React.useState(0);
   const [photoPreviewIndex, setPhotoPreviewIndex] = React.useState(0);
 
+  const slideshowImagesKey = React.useMemo(
+    () => (metadata?.images ?? []).join("|"),
+    [metadata?.images],
+  );
+
+  React.useEffect(() => {
+    setPhotoPreviewIndex(0);
+  }, [slideshowImagesKey]);
+
   const onPreviewLayout = (e: LayoutChangeEvent) => {
     const w = e.nativeEvent.layout.width;
     if (w > 0) setPreviewWidth(w);
@@ -46,8 +55,13 @@ export function DialogInstagram({
   }) => {
     const w = previewWidth || 0;
     if (!w) return;
-    const idx = Math.round(e.nativeEvent.contentOffset.x / w);
-    setPhotoPreviewIndex(Math.max(0, idx));
+    const n = metadata?.images?.length ?? 0;
+    const maxIdx = n > 0 ? n - 1 : 0;
+    const idx = Math.min(
+      maxIdx,
+      Math.max(0, Math.round(e.nativeEvent.contentOffset.x / w)),
+    );
+    setPhotoPreviewIndex(idx);
   };
 
   return (
@@ -86,7 +100,7 @@ export function DialogInstagram({
 
             {!!metadata?.images?.length && (
               <Pressable
-                onPress={onDownloadPhotos}
+                onPress={() => void onDownloadPhotos(photoPreviewIndex)}
                 disabled={isSaving}
                 className="w-full rounded-2xl overflow-hidden active:opacity-90"
                 style={{ opacity: isSaving ? 0.6 : 1 }}
@@ -145,26 +159,12 @@ export function DialogInstagram({
             ))}
           </ScrollView>
 
-          <View className="absolute bottom-3 left-0 right-0 items-center">
-            <View className="flex-row items-center gap-2 px-3 py-2 rounded-full bg-black/40 border border-white/10">
-              {(metadata?.images ?? []).map((_, idx) => {
-                const active = idx === photoPreviewIndex;
-                return (
-                  <View
-                    key={`dot-${idx}`}
-                    className="rounded-full"
-                    style={{
-                      width: active ? 18 : 7,
-                      height: 7,
-                      backgroundColor: active
-                        ? socialPalette.accent
-                        : "rgba(255,255,255,0.35)",
-                      opacity: active ? 1 : 0.9,
-                    }}
-                  />
-                );
-              })}
-            </View>
+          <View className="absolute bottom-4 left-0 right-0 items-center px-4">
+            <PhotoSlideshowDots
+              total={(metadata?.images ?? []).length}
+              activeIndex={photoPreviewIndex}
+              accentColor={socialPalette.accent}
+            />
           </View>
         </View>
       ) : !!previewUrl ? (
