@@ -365,3 +365,25 @@ type DeleteConfirmModalProps = {
   iconColor?: string;
   children?: ReactNode;
 };
+
+//======================= System Album Detail Types =======================//
+type Props = {
+  platformKey:
+    | "tiktok"
+    | "instagram"
+    | "facebook"
+    | "youtube"
+    | "threads"
+    | "documents"
+    | string;
+  title?: string;
+};
+
+type SystemAlbumKey =
+  | "tiktok"
+  | "instagram"
+  | "facebook"
+  | "youtube"
+  | "threads"
+  | "documents"
+  | string;

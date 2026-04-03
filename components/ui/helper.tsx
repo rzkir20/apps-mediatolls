@@ -414,9 +414,7 @@ export function PhotoSlideshowDots({
               width: active ? 18 : 5,
               height: 5,
               borderRadius: 3,
-              backgroundColor: active
-                ? accentColor
-                : "rgba(255,255,255,0.38)",
+              backgroundColor: active ? accentColor : "rgba(255,255,255,0.38)",
               opacity: active ? 1 : 0.75,
             }}
           />
@@ -439,4 +437,22 @@ export function getPlatformAlbumName(
   const base = "Media Tools";
   if (Platform.OS === "android") return `${base}/${platformKey}`;
   return `${base} (${platformKey})`;
+}
+
+//================================ Format Bytes Function =================================//
+export function formatBytes(bytes: number) {
+  const KB = 1000;
+  const MB = KB * 1000;
+  const GB = MB * 1000;
+
+  const fmt = (value: number, unit: string) => {
+    const decimals = Math.abs(value - Math.round(value)) < 0.01 ? 0 : 1;
+    return `${value.toFixed(decimals)} ${unit}`;
+  };
+
+  if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
+  if (bytes < KB) return `${bytes.toFixed(0)} B`;
+  if (bytes < MB) return fmt(bytes / KB, "KB");
+  if (bytes < GB) return fmt(bytes / MB, "MB");
+  return fmt(bytes / GB, "GB");
 }

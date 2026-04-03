@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 
 import React from "react";
 
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -28,8 +28,6 @@ export default function SystemScreen() {
   const {
     sortKey,
     setSortKey,
-    searchText,
-    setSearchText,
     storageLoading,
     storageError,
     storageErrorText,
@@ -73,23 +71,6 @@ export default function SystemScreen() {
             {"\n"}
             <Text className="text-social-accent">{copy.manager}</Text>
           </Text>
-
-          <View className="bg-white/5 border border-white/10 rounded-2xl px-4 py-4 flex-row items-center gap-3 mb-8">
-            <IconSymbol
-              name="search"
-              size={18}
-              color={socialPalette.slate500}
-            />
-            <TextInput
-              value={searchText}
-              onChangeText={setSearchText}
-              placeholder={copy.searchPlaceholder}
-              placeholderTextColor={socialPalette.slate600}
-              className="flex-1 text-sm font-medium text-white"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </View>
 
           <View className="px-0 mb-8">
             <View className="p-6 rounded-[32px] bg-white/5 border border-white/10 relative overflow-hidden">
@@ -228,9 +209,19 @@ export default function SystemScreen() {
                     style={{ opacity: 1 }}
                     accessibilityRole="button"
                     onPress={() => {
-                      // For now the design is static; wiring filtering can come later.
-                      // Keeping it non-blocking to avoid unexpected UX changes.
-                      setSortKey((prev) => prev);
+                      const path =
+                        c.key === "tiktok"
+                          ? "/system/tiktok"
+                          : c.key === "instagram"
+                            ? "/system/instagram"
+                            : c.key === "facebook"
+                              ? "/system/facebook"
+                              : c.key === "youtube"
+                                ? "/system/youtube"
+                                : c.key === "threads"
+                                  ? "/system/threads"
+                                  : "/system/documents";
+                      router.push(path);
                     }}
                   >
                     <View

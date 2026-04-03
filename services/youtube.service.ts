@@ -738,6 +738,13 @@ export function useYoutubeController() {
         assets.push(await MediaLibrary.createAssetAsync(uri));
       }
 
+      // Some builds are more strict when assigning audio assets into an album.
+      // Skipping album creation for MP3 prevents save failures and ensures
+      // the success modal can appear.
+      if (downloadKindRef.current === "audio") {
+        return assets;
+      }
+
       const albumName = getPlatformAlbumName(PLATFORM);
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
@@ -772,7 +779,10 @@ export function useYoutubeController() {
       });
     },
     onError: (e) => {
-      const msg = getErrorMessage(e, "Gagal menyimpan");
+      const msg = getErrorMessage(
+        e,
+        downloadKindRef.current === "audio" ? "Gagal menyimpan audio" : "Gagal menyimpan",
+      );
       setUi({
         saveText: msg,
         downloadPillText: "Failed",

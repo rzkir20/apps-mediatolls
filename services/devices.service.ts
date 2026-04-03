@@ -58,6 +58,57 @@ export function useDevicesController() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  async function estimateAlbumSizeBytes(
+    album: any,
+  ): Promise<number | null> {
+    const assetCount: number = Number(album?.assetCount ?? 0);
+    if (!assetCount) return null;
+
+    // Sampling to avoid long blocking on large libraries.
+    const sampleLimit = Math.min(10, assetCount);
+
+    try {
+      const page = await MediaLibrary.getAssetsAsync({
+        album,
+        first: sampleLimit,
+      });
+
+      const assets = page?.assets ?? [];
+      if (!assets.length) return null;
+
+      let sumBytes = 0;
+      let validCount = 0;
+
+      for (const asset of assets) {
+        try {
+          const info = await MediaLibrary.getAssetInfoAsync(asset, {
+            shouldDownloadFromNetwork: false,
+          });
+          const localUri = (info as any)?.localUri as string | undefined;
+          if (!localUri) continue;
+
+          const f = await FileSystem.getInfoAsync(localUri, {
+            md5: false,
+          } as any);
+
+          const size = (f as any)?.size;
+          if (typeof size === "number" && Number.isFinite(size) && size > 0) {
+            sumBytes += size;
+            validCount += 1;
+          }
+        } catch {
+          // ignore single-asset failures
+        }
+      }
+
+      if (!validCount) return null;
+      const avg = sumBytes / validCount;
+      return Math.floor(avg * assetCount);
+    } catch {
+      return null;
+    }
+  }
+
   const storageUsedBytes = useMemo(() => {
     if (storageTotalBytes == null || storageFreeBytes == null) return null;
     return Math.max(0, storageTotalBytes - storageFreeBytes);
@@ -252,6 +303,30 @@ export function useDevicesController() {
           .sort((a, b) => a.title.localeCompare(b.title));
 
         setCategories(next);
+
+        // Load estimated sizes in the background (sampling only) to avoid
+        // making the UI feel slow on large libraries.
+        void (async () => {
+          const results = albumResults.filter((r) => r.album != null);
+          for (const r of results) {
+            if (cancelled) return;
+            const assetCount = r.album?.assetCount ?? 0;
+            const estimatedBytes = await estimateAlbumSizeBytes(r.album);
+            if (cancelled) return;
+            if (estimatedBytes == null) continue;
+
+            setCategories((prev) =>
+              prev.map((c) =>
+                c.key === r.p.key
+                  ? {
+                      ...c,
+                      meta: `${formatBytes(estimatedBytes)} • ${assetCount} Files`,
+                    }
+                  : c,
+              ),
+            );
+          }
+        })();
       } catch {
         if (DEVICES_DEBUG) {
           console.log("[System][categories] Failed loading categories");
