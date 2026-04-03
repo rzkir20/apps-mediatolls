@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { useRouter } from "expo-router";
 
-import React from "react";
+import React, { useMemo } from "react";
 
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -38,6 +38,34 @@ export default function SystemScreen() {
     categories,
     categoriesLoading,
   } = useDevicesController();
+
+  const visibleCategories = useMemo(() => {
+    const parseEstimatedBytes = (meta: string) => {
+      // meta example: "123.4 MB • 12 Files"
+      const m = meta.match(/([\d.]+)\s*(KB|MB|GB)/i);
+      if (!m) return 0;
+      const value = Number(m[1] ?? 0);
+      const unit = (m[2] ?? "").toUpperCase();
+      if (!Number.isFinite(value) || value <= 0) return 0;
+      if (unit === "GB") return value * 1000 * 1000 * 1000;
+      if (unit === "MB") return value * 1000 * 1000;
+      if (unit === "KB") return value * 1000;
+      return 0;
+    };
+
+    const sorted = [...categories];
+    if (sortKey === "size") {
+      sorted.sort((a, b) => parseEstimatedBytes(b.meta) - parseEstimatedBytes(a.meta));
+      return sorted;
+    }
+
+    if (sortKey === "oldest") {
+      return sorted.reverse();
+    }
+
+    // latest
+    return sorted;
+  }, [categories, sortKey]);
 
   return (
     <View className="flex-1 bg-social-bg">
@@ -194,7 +222,7 @@ export default function SystemScreen() {
                   {copy.loadingFolders}
                 </Text>
               </View>
-            ) : categories.length === 0 ? (
+            ) : visibleCategories.length === 0 ? (
               <View className="rounded-[32px] bg-white/5 border border-white/10 p-5">
                 <Text className="text-xs font-bold text-slate-500">
                   {copy.noFolders}
@@ -202,7 +230,7 @@ export default function SystemScreen() {
               </View>
             ) : (
               <View className="flex-row flex-wrap gap-4">
-                {categories.map((c) => (
+                {visibleCategories.map((c) => (
                   <Pressable
                     key={c.key}
                     className="w-[48%] p-5 rounded-[40px] bg-white/5 border border-white/5 flex-col items-start"

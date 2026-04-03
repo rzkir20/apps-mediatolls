@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -6,9 +6,15 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useAppConfig } from "@/lib/config";
 
-import { Platform } from "react-native";
+import { socialPalette } from "@/lib/pallate";
 
 import * as FileSystem from "expo-file-system/legacy";
+
+import { Alert, Linking, Platform } from "react-native";
+
+import * as DocumentPicker from "expo-document-picker";
+
+import * as Haptics from "expo-haptics";
 
 import { fromByteArray } from "base64-js";
 
@@ -17,6 +23,7 @@ export const PLATFORM = "documents";
 const HISTORY_STORAGE_KEY = "convert-doc-history:v1";
 
 const HISTORY_LIMIT = 30;
+const CONVERT_TIMEOUT_MS = 120_000;
 
 export type TargetFormat = "pdf" | "docx";
 
@@ -60,6 +67,30 @@ async function saveHistoryToStorage(items: HistoryItemConvert[]) {
   await AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(items));
 }
 
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs = CONVERT_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(
+        "Proses konversi timeout. Coba lagi dengan file lebih kecil.",
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 function getFilenameFromResponseOrFile(args: {
   res: Response;
   fallbackBaseName: string;
@@ -78,32 +109,6 @@ function getFilenameFromResponseOrFile(args: {
   return `${fallbackBaseName}.${fallbackExt}`;
 }
 
-function triggerBlobDownloadWebOnly(blob: Blob, filename: string) {
-  // Expo Web: save via <a download>. On native this won't work.
-  if (typeof document === "undefined") {
-    throw new Error("Download file hanya didukung di Web untuk fitur ini.");
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-type UploadFile =
-  | File
-  | {
-      uri: string;
-      name: string;
-      type?: string;
-      size?: number | null;
-    };
-
-type ConvertResult =
-  | { kind: "web"; blob: Blob; filename: string }
-  | { kind: "native"; uri: string; filename: string };
-
 function getUploadFileName(file: UploadFile) {
   return "name" in file ? file.name : "file";
 }
@@ -113,26 +118,25 @@ function getUploadFileSize(file: UploadFile) {
 }
 
 function appendFileToFormData(formData: FormData, file: UploadFile) {
-  // Web: File is supported directly.
-  // Native: must pass `{ uri, name, type }`.
-  if ("uri" in file && typeof file.uri === "string") {
-    formData.append(
-      "file",
-      {
-        uri: file.uri,
-        name: file.name,
-        type: file.type ?? "application/octet-stream",
-      } as any,
-    );
-    return;
+  if (!("uri" in file) || typeof file.uri !== "string") {
+    throw new Error("Mode web tidak didukung. Gunakan aplikasi mobile.");
   }
-  formData.append("file", file as any);
+  formData.append("file", {
+    uri: file.uri,
+    name: file.name,
+    type: file.type ?? "application/octet-stream",
+  } as any);
 }
 
 async function ensureDownloadsDir() {
-  const base = FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? null;
+  const base =
+    FileSystem.documentDirectory ?? FileSystem.cacheDirectory ?? null;
   if (!base) throw new Error("Folder penyimpanan tidak tersedia.");
-  const dir = `${base}MediaTools/Documents/`;
+  const albumName =
+    Platform.OS === "android"
+      ? "Media Tools/documents"
+      : "Media Tools (documents)";
+  const dir = `${base}${albumName}/`;
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
   return dir;
 }
@@ -188,16 +192,21 @@ export function useStateConvertDoc() {
   const targetFormat = ui.data.targetFormat;
   const downloadError = ui.data.downloadError;
 
-  const convertMutation = useMutation<ConvertResult, Error, void>({
-    mutationFn: async () => {
+  const convertMutation = useMutation<
+    ConvertResult,
+    Error,
+    TargetFormat | undefined
+  >({
+    mutationFn: async (requestedTargetFormat) => {
+      const activeTargetFormat = requestedTargetFormat ?? targetFormat;
       if (!file) throw new Error("Pilih file terlebih dahulu");
       if (!baseUrl) throw new Error("API URL belum diset");
 
       const formData = new FormData();
       appendFileToFormData(formData, file);
-      formData.append("targetFormat", targetFormat);
+      formData.append("targetFormat", activeTargetFormat);
 
-      const res = await fetch(`${baseUrl}/api/convert/document`, {
+      const res = await fetchWithTimeout(`${baseUrl}/api/convert/document`, {
         method: "POST",
         body: formData,
       });
@@ -213,32 +222,18 @@ export function useStateConvertDoc() {
         throw new Error(message);
       }
 
-      if (Platform.OS === "web") {
-        const filename = getFilenameFromResponseOrFile({
-          res,
-          fallbackBaseName: "document",
-          fallbackExt: targetFormat,
-          originalFileName: getUploadFileName(file),
-        });
-        const blob = await res.blob();
-        return { kind: "web", blob, filename };
-      }
-
       const buffer = await res.arrayBuffer();
       const filename = getFilenameFromResponseOrFile({
         res,
         fallbackBaseName: "document",
-        fallbackExt: targetFormat,
+        fallbackExt: activeTargetFormat,
         originalFileName: getUploadFileName(file),
       });
       const uri = await saveArrayBufferToFile({ filename, buffer });
-      return { kind: "native", uri, filename };
+      return { kind: "native", uri, filename } as const;
     },
     onSuccess: (data) => {
       setUi({ downloadError: null });
-      if (data.kind === "web") {
-        triggerBlobDownloadWebOnly(data.blob, data.filename);
-      }
       void addToHistory(data.filename);
     },
     onError: (error) => {
@@ -308,14 +303,18 @@ export function useStateConvertDoc() {
     [setUi],
   );
 
-  const onConvert = useCallback(() => {
-    if (!file) {
-      setUi({ downloadError: "Pilih file dokumen terlebih dahulu" });
-      return;
-    }
-    setUi({ downloadError: null });
-    convertMutation.mutate();
-  }, [file, convertMutation, setUi]);
+  const onConvert = useCallback(
+    (nextTargetFormat?: TargetFormat) => {
+      if (!file) {
+        setUi({ downloadError: "Pilih file dokumen terlebih dahulu" });
+        return;
+      }
+      const activeTargetFormat = nextTargetFormat ?? targetFormat;
+      setUi({ targetFormat: activeTargetFormat, downloadError: null });
+      convertMutation.mutate(activeTargetFormat);
+    },
+    [file, convertMutation, setUi, targetFormat],
+  );
 
   const historyReady = true;
   const historyItems = history.data ?? [];
@@ -332,6 +331,9 @@ export function useStateConvertDoc() {
     clearHistory,
     onFileChange,
     onConvert,
+    lastConvertedUri:
+      convertMutation.data?.kind === "native" ? convertMutation.data.uri : null,
+    lastConvertedFilename: convertMutation.data?.filename ?? null,
   };
 }
 
@@ -359,10 +361,13 @@ export function useStatePdfToExcel() {
       const formData = new FormData();
       appendFileToFormData(formData, file);
 
-      const res = await fetch(`${baseUrl}/api/convert/pdf-to-excel`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetchWithTimeout(
+        `${baseUrl}/api/convert/pdf-to-excel`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (!res.ok) {
         let message = "Konversi PDF ke Excel gagal";
@@ -381,17 +386,12 @@ export function useStatePdfToExcel() {
         fallbackExt: "xlsx",
         originalFileName: getUploadFileName(file),
       });
-      if (Platform.OS === "web") {
-        const blob = await res.blob();
-        return { kind: "web", blob, filename };
-      }
       const buffer = await res.arrayBuffer();
       const uri = await saveArrayBufferToFile({ filename, buffer });
-      return { kind: "native", uri, filename };
+      return { kind: "native", uri, filename } as const;
     },
     onSuccess: (data) => {
       setUi({ downloadError: null });
-      if (data.kind === "web") triggerBlobDownloadWebOnly(data.blob, data.filename);
     },
     onError: (error) => {
       setUi({
@@ -435,6 +435,9 @@ export function useStatePdfToExcel() {
     downloadError,
     onFileChange,
     onConvert,
+    lastConvertedUri:
+      convertMutation.data?.kind === "native" ? convertMutation.data.uri : null,
+    lastConvertedFilename: convertMutation.data?.filename ?? null,
   };
 }
 
@@ -462,7 +465,7 @@ export function useStatePdfToPpt() {
       const formData = new FormData();
       appendFileToFormData(formData, file);
 
-      const res = await fetch(`${baseUrl}/api/convert/pdf-to-ppt`, {
+      const res = await fetchWithTimeout(`${baseUrl}/api/convert/pdf-to-ppt`, {
         method: "POST",
         body: formData,
       });
@@ -484,17 +487,12 @@ export function useStatePdfToPpt() {
         fallbackExt: "pptx",
         originalFileName: getUploadFileName(file),
       });
-      if (Platform.OS === "web") {
-        const blob = await res.blob();
-        return { kind: "web", blob, filename };
-      }
       const buffer = await res.arrayBuffer();
       const uri = await saveArrayBufferToFile({ filename, buffer });
-      return { kind: "native", uri, filename };
+      return { kind: "native", uri, filename } as const;
     },
     onSuccess: (data) => {
       setUi({ downloadError: null });
-      if (data.kind === "web") triggerBlobDownloadWebOnly(data.blob, data.filename);
     },
     onError: (error) => {
       setUi({
@@ -538,5 +536,283 @@ export function useStatePdfToPpt() {
     downloadError,
     onFileChange,
     onConvert,
+    lastConvertedUri:
+      convertMutation.data?.kind === "native" ? convertMutation.data.uri : null,
+    lastConvertedFilename: convertMutation.data?.filename ?? null,
+  };
+}
+
+export function useFilesScreenState(copy: FilesScreenCopy) {
+  const [formatIndex, setFormatIndex] = useState(0);
+  const [quality, setQuality] = useState<1 | 2 | 3>(3);
+  const [formatModalOpen, setFormatModalOpen] = useState(false);
+  const [recentItems, setRecentItems] = useState([
+    {
+      id: "1",
+      name: "Business_Proposal.pdf",
+      meta: "Converted to DOCX • 2.4 MB",
+      icon: "picture-as-pdf" as const,
+      iconBg: socialPalette.docPdfBg,
+      iconColor: socialPalette.docPdf,
+    },
+    {
+      id: "2",
+      name: "Monthly_Report_Final.docx",
+      meta: "Converted to PDF • 840 KB",
+      icon: "description" as const,
+      iconBg: socialPalette.docWordBg,
+      iconColor: socialPalette.docWord,
+    },
+  ]);
+  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [showDownloadSuccessModal, setShowDownloadSuccessModal] =
+    useState(false);
+  const [convertProgress, setConvertProgress] = useState(0);
+  const [hasActiveConvert, setHasActiveConvert] = useState(false);
+
+  const {
+    file,
+    targetFormat,
+    setTargetFormat,
+    onFileChange,
+    onConvert,
+    converting,
+    downloadError,
+    lastConvertedUri,
+    lastConvertedFilename,
+  } = useStateConvertDoc();
+
+  const excel = useStatePdfToExcel();
+  const ppt = useStatePdfToPpt();
+  const convertingAny = converting || excel.converting || ppt.converting;
+
+  useEffect(() => {
+    if (convertingAny) {
+      setShowConvertModal(true);
+      setConvertProgress((prev) => (prev > 0 ? prev : 8));
+    }
+  }, [convertingAny]);
+
+  useEffect(() => {
+    if (!convertingAny || !hasActiveConvert) return;
+    const id = setInterval(() => {
+      setConvertProgress((prev) => {
+        if (prev >= 92) return prev;
+        const step = prev < 30 ? 6 : prev < 70 ? 4 : 2;
+        return Math.min(92, prev + step);
+      });
+    }, 500);
+    return () => clearInterval(id);
+  }, [convertingAny, hasActiveConvert]);
+
+  useEffect(() => {
+    const errorMessage =
+      downloadError || excel.downloadError || ppt.downloadError;
+    if (!errorMessage) return;
+    setConvertProgress(100);
+    setHasActiveConvert(false);
+    Alert.alert("Konversi gagal", errorMessage);
+  }, [downloadError, excel.downloadError, ppt.downloadError]);
+
+  useEffect(() => {
+    if (!hasActiveConvert || convertingAny) return;
+    const errorMessage =
+      downloadError || excel.downloadError || ppt.downloadError;
+    if (errorMessage) return;
+    setConvertProgress(100);
+    setHasActiveConvert(false);
+    setShowConvertModal(false);
+  }, [
+    convertingAny,
+    hasActiveConvert,
+    downloadError,
+    excel.downloadError,
+    ppt.downloadError,
+  ]);
+
+  const selectedOutputKey = useMemo(() => {
+    if (formatIndex === 0) return "pdf";
+    if (formatIndex === 1) return "docx";
+    if (formatIndex === 2) return "xlsx";
+    return "pptx";
+  }, [formatIndex]);
+
+  const qualityLabel = useMemo(() => {
+    if (quality === 3) return "High";
+    if (quality === 2) return "Medium";
+    return "Low";
+  }, [quality]);
+
+  const haptic = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  }, []);
+
+  const onClearRecent = useCallback(() => {
+    haptic();
+    setRecentItems([]);
+  }, [haptic]);
+
+  const pickDocument = useCallback(async () => {
+    haptic();
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type:
+          selectedOutputKey === "xlsx" || selectedOutputKey === "pptx"
+            ? "application/pdf"
+            : "*/*",
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled) return;
+      const asset = result.assets[0];
+      setPickedFile({
+        name: asset.name,
+        uri: asset.uri,
+        size: asset.size ?? null,
+        mimeType: asset.mimeType,
+      });
+      const upload = {
+        uri: asset.uri,
+        name: asset.name,
+        type: asset.mimeType ?? "application/octet-stream",
+        size: asset.size ?? null,
+      };
+      onFileChange(upload);
+      excel.onFileChange(selectedOutputKey === "xlsx" ? upload : null);
+      ppt.onFileChange(selectedOutputKey === "pptx" ? upload : null);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      Alert.alert(copy.cannotOpenFile, msg);
+    }
+  }, [
+    copy.cannotOpenFile,
+    excel,
+    haptic,
+    onFileChange,
+    ppt,
+    selectedOutputKey,
+  ]);
+
+  const onConvertNow = useCallback(() => {
+    setHasActiveConvert(true);
+    setConvertProgress(8);
+    setShowConvertModal(true);
+
+    if (selectedOutputKey === "pdf" || selectedOutputKey === "docx") {
+      onConvert(selectedOutputKey);
+      return;
+    }
+
+    if (selectedOutputKey === "xlsx") {
+      excel.onConvert();
+      return;
+    }
+
+    ppt.onConvert();
+  }, [excel, onConvert, ppt, selectedOutputKey]);
+
+  const latestResultUriForSelection =
+    selectedOutputKey === "xlsx"
+      ? excel.lastConvertedUri
+      : selectedOutputKey === "pptx"
+        ? ppt.lastConvertedUri
+        : lastConvertedUri;
+
+  const latestResultFilenameForSelection =
+    selectedOutputKey === "xlsx"
+      ? excel.lastConvertedFilename
+      : selectedOutputKey === "pptx"
+        ? ppt.lastConvertedFilename
+        : lastConvertedFilename;
+
+  const canDownloadResult = !convertingAny && !!latestResultUriForSelection;
+
+  const ctaDisabled =
+    convertingAny ||
+    (!canDownloadResult &&
+      (selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+        ? !file
+        : selectedOutputKey === "xlsx"
+          ? !excel.file
+          : !ppt.file));
+
+  const onPrimaryCtaPress = useCallback(() => {
+    haptic();
+    if (canDownloadResult && latestResultUriForSelection) {
+      void Linking.openURL(latestResultUriForSelection)
+        .then(() => {
+          setShowDownloadSuccessModal(true);
+        })
+        .catch((error) => {
+          const msg = error instanceof Error ? error.message : String(error);
+          Alert.alert(
+            "Gagal membuka file",
+            latestResultFilenameForSelection
+              ? `Tidak bisa membuka ${latestResultFilenameForSelection}.\n${msg}`
+              : msg,
+          );
+        });
+      return;
+    }
+    onConvertNow();
+  }, [
+    canDownloadResult,
+    haptic,
+    latestResultFilenameForSelection,
+    latestResultUriForSelection,
+    onConvertNow,
+  ]);
+
+  const convertCtaLabel = convertingAny
+    ? copy.converting
+    : canDownloadResult
+      ? "DOWNLOAD"
+      : selectedOutputKey === "pdf" || selectedOutputKey === "docx"
+        ? file
+          ? `${copy.convertNow} (${targetFormat.toUpperCase()})`
+          : copy.chooseFileFirst
+        : selectedOutputKey === "xlsx"
+          ? excel.file
+            ? `${copy.convertNow} (XLSX)`
+            : copy.choosePdfFirst
+          : ppt.file
+            ? `${copy.convertNow} (PPTX)`
+            : copy.choosePdfFirst;
+
+  return {
+    file,
+    targetFormat,
+    setTargetFormat,
+    formatIndex,
+    setFormatIndex,
+    quality,
+    setQuality,
+    formatModalOpen,
+    setFormatModalOpen,
+    recentItems,
+    pickedFile,
+    showConvertModal,
+    setShowConvertModal,
+    showDownloadSuccessModal,
+    setShowDownloadSuccessModal,
+    convertProgress,
+    setConvertProgress,
+    hasActiveConvert,
+    setHasActiveConvert,
+    convertingAny,
+    selectedOutputKey,
+    qualityLabel,
+    canDownloadResult,
+    latestResultUriForSelection,
+    latestResultFilenameForSelection,
+    ctaDisabled,
+    convertCtaLabel,
+    onClearRecent,
+    pickDocument,
+    onPrimaryCtaPress,
+    haptic,
   };
 }

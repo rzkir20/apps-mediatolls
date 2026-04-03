@@ -48,7 +48,10 @@ export function useSystemAlbumDetail(platformKey: SystemAlbumKey) {
       try {
         const perm = await MediaLibrary.getPermissionsAsync();
         if (!perm.granted) {
-          const res = await MediaLibrary.requestPermissionsAsync();
+          const res = await MediaLibrary.requestPermissionsAsync(
+            true,
+            ["video", "photo", "audio"] as any,
+          );
           if (!res.granted) {
             setAssets([]);
             setAlbumAssetCount(null);
@@ -58,10 +61,34 @@ export function useSystemAlbumDetail(platformKey: SystemAlbumKey) {
           }
         }
 
-        const albumName = getPlatformAlbumName(platformKey as any);
-        const album = await MediaLibrary.getAlbumAsync(albumName).catch(
-          () => null,
-        );
+        const expectedAlbumName = getPlatformAlbumName(platformKey as any);
+
+        // Try direct album lookup first, then fallback to fuzzy match.
+        const directAlbum = await MediaLibrary.getAlbumAsync(
+          expectedAlbumName,
+        ).catch(() => null);
+
+        let album = directAlbum;
+        if (!album) {
+          const albums = await MediaLibrary.getAlbumsAsync();
+          const normalizedTarget = expectedAlbumName.toLowerCase();
+          const key = String(platformKey).toLowerCase();
+
+          album =
+            albums.find((a) => {
+              const title = (a.title ?? "").toLowerCase();
+              const byExact = title === normalizedTarget;
+              const byPlatformOnly =
+                title === key || title === key.toUpperCase();
+              const bySuffix = title.endsWith(`/${key}`);
+              const byLoose =
+                title.includes("media tools") &&
+                (title.includes(key) ||
+                  title.endsWith(`(${key})`) ||
+                  title.includes(`(${key})`));
+              return byExact || byPlatformOnly || bySuffix || byLoose;
+            }) ?? null;
+        }
 
         if (!album) {
           setAssets([]);

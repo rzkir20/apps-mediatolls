@@ -1,13 +1,8 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React from "react";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
-import * as DocumentPicker from "expo-document-picker";
-
-import * as Haptics from "expo-haptics";
-
 import {
-  Alert,
   Platform,
   Pressable,
   ScrollView,
@@ -21,6 +16,8 @@ import { BottomSheets } from "@/components/BottomSheets";
 
 import { DonasiHeader } from "@/components/donasi/Header";
 
+import { DownloadSuccessModal } from "@/components/ui/download-succes";
+
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 import { DownloadProgressModal } from "@/components/ui/download-modal";
@@ -32,9 +29,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import languageData from "@/lib/language.json";
 
 import {
-  useStateConvertDoc,
-  useStatePdfToExcel,
-  useStatePdfToPpt,
+  useFilesScreenState,
 } from "@/services/documents.service";
 
 const OUTPUT_FORMATS = [
@@ -74,37 +69,11 @@ const SUPPORTED_FORMATS = [
   },
 ] as const;
 
-const MOCK_RECENT = [
-  {
-    id: "1",
-    name: "Business_Proposal.pdf",
-    meta: "Converted to DOCX • 2.4 MB",
-    icon: "picture-as-pdf" as const,
-    iconBg: socialPalette.docPdfBg,
-    iconColor: socialPalette.docPdf,
-  },
-  {
-    id: "2",
-    name: "Monthly_Report_Final.docx",
-    meta: "Converted to PDF • 840 KB",
-    icon: "description" as const,
-    iconBg: socialPalette.docWordBg,
-    iconColor: socialPalette.docWord,
-  },
-] as const;
-
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
-
-type PickedFile = {
-  name: string;
-  uri: string;
-  size: number | null;
-  mimeType?: string;
-};
 
 export default function FilesScreen() {
   const insets = useSafeAreaInsets();
@@ -112,148 +81,79 @@ export default function FilesScreen() {
   const { language } = useLanguage();
   const copy = languageData.files[language];
 
-  const [formatIndex, setFormatIndex] = useState(0);
-  const [quality, setQuality] = useState<1 | 2 | 3>(3);
-  const [formatModalOpen, setFormatModalOpen] = useState(false);
-  const [recentItems, setRecentItems] = useState([...MOCK_RECENT]);
-  const [pickedFile, setPickedFile] = useState<PickedFile | null>(null);
-
   const {
-    file,
-    targetFormat,
     setTargetFormat,
-    onFileChange,
-    onConvert,
-    converting,
-  } = useStateConvertDoc();
-
-  const excel = useStatePdfToExcel();
-  const ppt = useStatePdfToPpt();
-
-  const convertingAny = converting || excel.converting || ppt.converting;
-
-  const selectedOutputKey = useMemo(() => {
-    if (formatIndex === 0) return "pdf";
-    if (formatIndex === 1) return "docx";
-    if (formatIndex === 2) return "xlsx";
-    return "pptx";
-  }, [formatIndex]);
-
-  const qualityLabel = useMemo(() => {
-    if (quality === 3) return "High";
-    if (quality === 2) return "Medium";
-    return "Low";
-  }, [quality]);
-
-  const haptic = useCallback(() => {
-    if (Platform.OS === "ios") {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  }, []);
-
-  const onClearRecent = useCallback(() => {
-    haptic();
-    setRecentItems([]);
-  }, [haptic]);
-
-  const pickDocument = useCallback(async () => {
-    haptic();
-    try {
-      if (Platform.OS === "web" && typeof document !== "undefined") {
-        const input = document.createElement("input");
-        input.type = "file";
-        input.accept =
-          selectedOutputKey === "xlsx" || selectedOutputKey === "pptx"
-            ? "application/pdf,.pdf"
-            : "*/*";
-        input.onchange = () => {
-          const f = input.files?.[0] ?? null;
-          onFileChange(f);
-          excel.onFileChange(selectedOutputKey === "xlsx" ? f : null);
-          ppt.onFileChange(selectedOutputKey === "pptx" ? f : null);
-          setPickedFile(
-            f
-              ? {
-                  name: f.name,
-                  uri: "",
-                  size: f.size ?? null,
-                  mimeType: f.type,
-                }
-              : null,
-          );
-        };
-        input.click();
-        return;
-      }
-
-      const result = await DocumentPicker.getDocumentAsync({
-        type:
-          selectedOutputKey === "xlsx" || selectedOutputKey === "pptx"
-            ? "application/pdf"
-            : "*/*",
-        copyToCacheDirectory: true,
-        multiple: false,
-      });
-      if (result.canceled) return;
-      const asset = result.assets[0];
-      setPickedFile({
-        name: asset.name,
-        uri: asset.uri,
-        size: asset.size ?? null,
-        mimeType: asset.mimeType,
-      });
-      const upload = {
-        uri: asset.uri,
-        name: asset.name,
-        type: asset.mimeType ?? "application/octet-stream",
-        size: asset.size ?? null,
-      };
-      onFileChange(upload);
-      excel.onFileChange(selectedOutputKey === "xlsx" ? upload : null);
-      ppt.onFileChange(selectedOutputKey === "pptx" ? upload : null);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      Alert.alert(copy.cannotOpenFile, msg);
-    }
-  }, [copy.cannotOpenFile, haptic, onFileChange, excel, ppt, selectedOutputKey]);
-
-  const onConvertNow = useCallback(() => {
-    if (selectedOutputKey === "pdf" || selectedOutputKey === "docx") {
-      setTargetFormat(selectedOutputKey);
-      onConvert();
-      return;
-    }
-
-    if (selectedOutputKey === "xlsx") {
-      excel.onConvert();
-      return;
-    }
-
-    ppt.onConvert();
-  }, [excel, onConvert, ppt, selectedOutputKey, setTargetFormat]);
+    formatIndex,
+    setFormatIndex,
+    quality,
+    setQuality,
+    formatModalOpen,
+    setFormatModalOpen,
+    recentItems,
+    pickedFile,
+    showConvertModal,
+    setShowConvertModal,
+    showDownloadSuccessModal,
+    setShowDownloadSuccessModal,
+    convertProgress,
+    setConvertProgress,
+    setHasActiveConvert,
+    convertingAny,
+    selectedOutputKey,
+    qualityLabel,
+    latestResultFilenameForSelection,
+    ctaDisabled,
+    convertCtaLabel,
+    onClearRecent,
+    pickDocument,
+    onPrimaryCtaPress,
+    haptic,
+  } = useFilesScreenState(copy);
 
   return (
     <View className="flex-1 bg-social-bg">
       <DonasiHeader title="MEDIA TOOLS" />
 
       <DownloadProgressModal
-        visible={convertingAny}
+        visible={showConvertModal}
         fileName={pickedFile?.name ?? copy.convertingDoc}
-        progressPercent={convertingAny ? 50 : 0}
-        statusPillText="Converting"
+        progressPercent={convertProgress}
+        statusPillText={convertingAny ? "Converting" : "Completed"}
         statusSubText="Completed"
         speedText={undefined}
         remainingText={undefined}
-        downloadedTotalText={convertingAny ? copy.convertingText : ""}
+        downloadedTotalText={convertingAny ? copy.convertingText : "Done"}
         qualityText={qualityLabel.toUpperCase()}
         isPaused={false}
         isSaving={convertingAny}
-        allowActionWhenCompleted={false}
+        allowActionWhenCompleted={!convertingAny}
         pauseLabel={copy.pauseConverting}
         cancelLabel={copy.close}
         onPause={() => {}}
-        onCancel={() => {}}
-        onRequestClose={() => {}}
+        onCancel={() => {
+          if (!convertingAny) {
+            setShowConvertModal(false);
+            setConvertProgress(0);
+            setHasActiveConvert(false);
+          }
+        }}
+        onRequestClose={() => {
+          if (!convertingAny) {
+            setShowConvertModal(false);
+            setConvertProgress(0);
+            setHasActiveConvert(false);
+          }
+        }}
+      />
+
+      <DownloadSuccessModal
+        visible={showDownloadSuccessModal}
+        fileName={latestResultFilenameForSelection ?? pickedFile?.name ?? "document"}
+        formatText={selectedOutputKey.toUpperCase()}
+        primaryActionLabel={copy.close}
+        backLabel=""
+        onPrimaryAction={() => setShowDownloadSuccessModal(false)}
+        onRequestClose={() => setShowDownloadSuccessModal(false)}
       />
 
       <ScrollView
@@ -445,47 +345,16 @@ export default function FilesScreen() {
             </View>
 
             <Pressable
-              onPress={() => {
-                haptic();
-                onConvertNow();
-              }}
-              disabled={
-                convertingAny ||
-                (selectedOutputKey === "pdf" || selectedOutputKey === "docx"
-                  ? !file
-                  : selectedOutputKey === "xlsx"
-                    ? !excel.file
-                    : !ppt.file)
-              }
+              onPress={onPrimaryCtaPress}
+              disabled={ctaDisabled}
               className="mt-6 w-full rounded-2xl overflow-hidden"
               style={{
-                opacity:
-                  convertingAny ||
-                  (selectedOutputKey === "pdf" || selectedOutputKey === "docx"
-                    ? !file
-                    : selectedOutputKey === "xlsx"
-                      ? !excel.file
-                      : !ppt.file)
-                    ? 0.6
-                    : 1,
+                opacity: ctaDisabled ? 0.6 : 1,
               }}
             >
               <View className="py-4 bg-social-accent items-center justify-center">
                 <Text className="text-white text-xs font-black uppercase tracking-widest">
-                  {convertingAny
-                    ? copy.converting
-                    : selectedOutputKey === "pdf" ||
-                        selectedOutputKey === "docx"
-                      ? file
-                        ? `${copy.convertNow} (${targetFormat.toUpperCase()})`
-                        : copy.chooseFileFirst
-                      : selectedOutputKey === "xlsx"
-                        ? excel.file
-                          ? `${copy.convertNow} (XLSX)`
-                          : copy.choosePdfFirst
-                        : ppt.file
-                          ? `${copy.convertNow} (PPTX)`
-                          : copy.choosePdfFirst}
+                  {convertCtaLabel}
                 </Text>
               </View>
             </Pressable>
