@@ -162,7 +162,7 @@ type DialogTiktokProps = {
 
   onDownloadVideoMp4: () => void;
   onDownloadAudioMp3: () => void;
-  onDownloadPhotos: () => void;
+  onDownloadPhotos: (activePhotoIndex?: number) => void | Promise<void>;
 };
 
 //======================= Instagram Dialog Types =======================//

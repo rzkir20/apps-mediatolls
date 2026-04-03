@@ -140,7 +140,7 @@ export default function HomeScreen() {
         speedText={downloadSpeedText ?? undefined}
         durationText={downloadRemainingText ?? "00:00"}
         formatText={
-          downloadFileName.toLowerCase().includes(".mp3") ? "MP3" : "MP4"
+          downloadFileName.toLowerCase().includes("mp3") ? "MP3" : "MP4"
         }
         primaryActionLabel={copy.close}
         secondaryActionLabel={copy.share}
@@ -392,7 +392,7 @@ export default function HomeScreen() {
 
                       {!!metadata?.images?.length ? (
                         <Pressable
-                          onPress={onDownloadPhotos}
+                          onPress={() => void onDownloadPhotos(coverPhotoIndex)}
                           disabled={isSaving}
                           className="px-4 py-2 rounded-full bg-white/5 border border-white/10 active:opacity-90 flex-row items-center gap-2"
                           style={{ opacity: isSaving ? 0.6 : 1 }}

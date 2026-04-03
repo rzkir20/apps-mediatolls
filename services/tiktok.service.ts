@@ -632,6 +632,12 @@ export function useTiktokController() {
         assets.push(await MediaLibrary.createAssetAsync(uri));
       }
 
+      // Some iOS/Android builds are more strict about album creation for audio assets.
+      // To ensure audio downloads show the success modal, we skip album handling for MP3.
+      if (downloadKindRef.current === "audio") {
+        return assets;
+      }
+
       const albumName = getPlatformAlbumName(PLATFORM);
       const first = assets[0];
       if (!first) throw new Error("Gagal membuat asset");
@@ -669,7 +675,12 @@ export function useTiktokController() {
       });
     },
     onError: (e) => {
-      const msg = getErrorMessage(e, "Gagal menyimpan video");
+      const msg = getErrorMessage(
+        e,
+        downloadKindRef.current === "audio"
+          ? "Gagal menyimpan audio"
+          : "Gagal menyimpan video",
+      );
       setUi({
         saveText: msg,
         downloadPillText: "Failed",
@@ -689,6 +700,7 @@ export function useTiktokController() {
         downloadPillText: "Preparing",
         downloadSubText: null,
         isDownloadOpen: true,
+        isDownloadSuccessOpen: false,
         downloadSpeedText: null,
         downloadRemainingText: null,
         downloadTotalText: null,
@@ -764,36 +776,54 @@ export function useTiktokController() {
     setUi,
   ]);
 
-  const onDownloadPhotos = useCallback(async () => {
-    const title = metadata?.text?.trim();
-    startDownloadUi({
-      fileName: title ? `${title} (Photos)` : "TikTok Photos",
-      kind: "photos",
-    });
-
-    if (!url.trim() || !baseUrl || isSaving) return;
-    try {
+  const onDownloadPhotos = useCallback(
+    async (activePhotoIndex?: number) => {
       const images = (metadata?.images ?? [])?.filter(Boolean) ?? [];
-      if (!images.length) throw new Error("Foto tidak tersedia untuk post ini");
-      await downloadPhotosMutation.mutateAsync({ imageUrls: images });
-    } catch (e) {
-      const msg = getErrorMessage(e, "Gagal download foto");
-      setUi({
-        downloadPercent: 100,
-        downloadPillText: "Failed",
-        downloadSubText: msg,
+
+      const rawIdx =
+        typeof activePhotoIndex === "number"
+          ? activePhotoIndex
+          : coverPhotoIndex;
+      const idx =
+        images.length > 0
+          ? Math.max(0, Math.min(images.length - 1, rawIdx))
+          : 0;
+
+      const title = metadata?.text?.trim();
+      startDownloadUi({
+        fileName: title ? `${title} (Photo ${idx + 1})` : `TikTok Photo ${idx + 1}`,
+        kind: "photos",
       });
-      throw e;
-    }
-  }, [
-    metadata,
-    startDownloadUi,
-    url,
-    baseUrl,
-    isSaving,
-    downloadPhotosMutation,
-    setUi,
-  ]);
+
+      if (!url.trim() || !baseUrl || isSaving) return;
+      try {
+        if (!images.length) throw new Error("Foto tidak tersedia untuk post ini");
+        const selected = images[idx];
+        if (!selected) throw new Error("Foto tidak tersedia untuk post ini");
+
+        // Download only the active photo (to match expected "active slide" behavior).
+        await downloadPhotosMutation.mutateAsync({ imageUrls: [selected] });
+      } catch (e) {
+        const msg = getErrorMessage(e, "Gagal download foto");
+        setUi({
+          downloadPercent: 100,
+          downloadPillText: "Failed",
+          downloadSubText: msg,
+        });
+        throw e;
+      }
+    },
+    [
+      metadata,
+      coverPhotoIndex,
+      startDownloadUi,
+      url,
+      baseUrl,
+      isSaving,
+      downloadPhotosMutation,
+      setUi,
+    ],
+  );
 
   const onTogglePauseOrSave = useCallback(async () => {
     if (downloadPercent >= 100 && isDownloadReadyToSave) {

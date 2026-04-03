@@ -72,7 +72,7 @@ export function DialogTiktok({
 
             {!!metadata?.images?.length && (
               <Pressable
-                onPress={onDownloadPhotos}
+                onPress={() => void onDownloadPhotos(photoPreviewIndex)}
                 disabled={isSaving}
                 className="w-full rounded-2xl overflow-hidden active:opacity-90"
                 style={{ opacity: isSaving ? 0.6 : 1 }}
